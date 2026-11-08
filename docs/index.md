@@ -54,7 +54,7 @@ clang++ --config=dos.cfg -mcmodel=large -Os app.cpp -o app.exe
     ---
 
     The other platforms have SDKs and sites of their own: see
-    [all clang-retro projects](projects.md).
+    [all clang-retro projects](https://clang-retro.github.io/).
 
 -   :material-hammer-wrench: **Build it yourself**
 

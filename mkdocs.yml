@@ -27,7 +27,7 @@ extra:
 
 nav:
   - Home: index.md
-  - All projects: projects.md
+  - All clang-retro projects: https://clang-retro.github.io/
   - Getting started:
       - The toolchain package: toolchain.md
       - Choosing a memory model: memory-models.md
