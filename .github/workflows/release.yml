@@ -79,6 +79,31 @@ jobs:
             echo "now:  $now"
             echo "last: $last"
             [ "$now" = "$last" ] && skip=true
+            # Commits that change only documentation don't need a new nightly.
+            if [ "$skip" = false ] && [ -n "$last" ]; then
+              docs_only=true
+              set -- $now
+              while [ $# -ge 2 ]; do
+                name=$1 new=$2; shift 2
+                old=$(printf '%s\n' "$last" | tr ' ' '\n' | sed -n "/^$name\$/{n;p;}")
+                [ "$old" = "$new" ] && continue
+                repo=$name; [ "$repo" = jwlink ] && repo=JWlink
+                if ! files=$(gh api "repos/clang-retro/$repo/compare/$old...$new" --jq '.files[].filename' 2>/dev/null) ||
+                   [ -z "$files" ] || [ "$(printf '%s\n' "$files" | wc -l)" -ge 300 ]; then
+                  docs_only=false; break
+                fi
+                for f in $files; do
+                  case $f in
+                  *.md|docs/*|.docs/*|mkdocs.yml|clang-retro-docs/*|LICENSE*|.github/workflows/docs.yml|.github/workflows/clang-retro-docs.yml) ;;
+                  *) docs_only=false; break 2 ;;
+                  esac
+                done
+              done
+              if [ "$docs_only" = true ]; then
+                echo "Only documentation changed since the last nightly."
+                skip=true
+              fi
+            fi
           fi
           echo "skip=$skip" | tee -a "$GITHUB_OUTPUT"
 

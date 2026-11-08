@@ -37,6 +37,8 @@ segment, and the heap takes all free DOS memory.
 [docs/memory-models.md](docs/memory-models.md) helps you choose a model
 for your program, with the clang flags for common cases.
 
+## Full-screen programs
+
 For full-screen DOS programs, the sysroot also has `<conio.h>` (in the C
 library), `<graphics.h>` and `<fastgraf.h>` (`-lgraph`: the Borland
 Graphics Interface and Fastgraph functions, from CGA to VESA),
@@ -50,6 +52,8 @@ against `-lcxl`, a new implementation of their API; see
 [docs/cxl.md](docs/cxl.md). Borland's Turbo Vision is there too, as
 `<tvision/tv.h>` and `-ltvision` in the models with far code (medium,
 large, huge and huge16): see [tvision/README.md](tvision/README.md).
+
+## Segments, stack and far data
 
 A source file's code over 64 KiB, in the models with far code, goes on in
 more code segments, `<file>_TEXT_1` and so on. A function is in one
@@ -68,6 +72,8 @@ may be far data in another file, so it is reached with far pointers, which
 work for near variables too. Far zero-initialized variables come after
 DGROUP and the stack, so they take no room in the .EXE file; the startup
 code clears them.
+
+## Near, far and huge pointers
 
 `__near`, `__far` and `__huge` (also `_near`, `_far` and `_huge`) qualify
 data as in Open Watcom and Microsoft C, in every model but tiny:
@@ -89,6 +95,8 @@ A function qualified with the model's own kind is an ordinary function;
 near and far function pointers do not convert to each other. `char __far
 *h(void)` is a near function (in small) that returns a far pointer: the
 qualifier applies to what follows it.
+
+## Calling conventions and interrupt handlers
 
 `__pascal` (also `_pascal`) is the 16-bit Windows API convention:
 arguments are pushed left to right, the called function removes them
@@ -142,6 +150,8 @@ and heap and gives back the stack of a .COM.
 In DOS programs these are for writing and calling Win16-style code; the
 `i8086-pc-win16` target below makes Windows programs and DLLs.
 
+## The huge16 model and halloc
+
 `huge16` is the huge model with a 16-bit `size_t`, as in Open Watcom:
 build with `-mcmodel=huge -msize-t=16`, and clang links the libraries in
 `lib/huge16`. Pointers are huge and `ptrdiff_t` stays 32 bits, but objects
@@ -158,6 +168,8 @@ The first `halloc` that finds no free DOS memory gives the end of the
 program's memory back to DOS: everything after the heap in the models
 whose heap is at most 64 KiB, or just the block's size in the huge models,
 whose heap then ends below it.
+
+## Near and far library functions
 
 The near and far functions of Open Watcom and Microsoft C are in every
 model, on DOS and on 16-bit Windows:
@@ -192,12 +204,16 @@ clang's `overloadable` in C and ordinary overloads in C++;
 `-D__I86_NO_OVERLOADS` leaves them out. `strtok` has none, as it keeps
 its place between calls: use `_fstrtok`.
 
+## Random numbers
+
 `arc4random` is seeded by `getentropy`, which has no random source on DOS
 or Windows to read: it mixes the clocks, the stack and many readings of
 the 8253 timer, with RDTSC when the CPU has it, through the ChaCha
 permutation. The seed is different on each run; on a CPU with RDTSC it
 is hard to guess, but on an 8088 PC it comes mostly from the time the
 program started, so it is no good for keys there.
+
+## Building programs
 
 clang links `crt0.obj`, `libc.a` and the builtins by default:
 
@@ -207,6 +223,8 @@ clang --target=i8086-pc-msdos -mcmodel=tiny --sysroot=<sysroot> hello.c -o hello
 ```
 
 Without `--sysroot`, clang looks in `<clang dir>/../i8086-msdos`.
+
+## C++
 
 C++ uses `clang++`, which also links libc++ and libc++abi:
 
@@ -264,6 +282,8 @@ fits. The tiny, small and compact models have one code segment for the
 whole program and go without it. Its parser takes about 5 KiB of stack,
 more than the 4 KiB default: link such a program with
 `-Wl,option,stack=8192`.
+
+## Text and binary files
 
 Files opened without `b` in the `fopen` mode, or without `O_BINARY`, are
 text files: line ends are CR LF on disk and Ctrl-Z ends the file. See
