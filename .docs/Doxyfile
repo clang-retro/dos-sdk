@@ -1,0 +1,15 @@
+# The API reference of the documentation site (api/), run by .docs/hooks.py
+# from the repository's root after `mkdocs build`.
+@INCLUDE               = .docs/Doxyfile.base
+PROJECT_NAME           = "clang-dos SDK"
+PROJECT_BRIEF          = "DOS libraries: graphics, cwin, tui, CXL, PDCurses headers and the SjLj unwinder"
+INPUT                  = graphics \
+                         cwin \
+                         tui \
+                         cxl/include \
+                         cxl/src \
+                         curses/curses.h \
+                         curses/panel.h \
+                         runtime
+FILE_PATTERNS          = *.h *.c *.cpp
+OPTIMIZE_OUTPUT_FOR_C  = NO

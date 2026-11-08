@@ -12,6 +12,7 @@ hooks:
 
 extra:
   retro:
+    doxygen: .docs/Doxyfile
     github: clang-retro/dos-sdk
     branch: main
     pages:
@@ -27,6 +28,7 @@ extra:
 
 nav:
   - Home: index.md
+  - API reference: api/index.html
   - All clang-retro projects: https://clang-retro.github.io/
   - Getting started:
       - The toolchain package: toolchain.md
