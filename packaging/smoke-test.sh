@@ -87,6 +87,11 @@ for m in small large; do
 done
 build "dos-small-cxx" dos-small-cxx.exe $CXX --config=dos.cfg -mcmodel=small -Os hello.cpp &&
   rundos "dos-small-cxx" "Hello, world from smoke! 42" dos-small-cxx.exe
+# std::atomic on an 8086: calls to compiler-rt that turn interrupts off.
+for m in small large; do
+  build "dos-$m-atomic" "dos-$m-atomic.exe" $CXX --config=dos.cfg -mcmodel=$m -Os atomic.cpp &&
+    rundos "dos-$m-atomic" "atomics ok 42 123456789" "dos-$m-atomic.exe"
+done
 # Turbo Vision waits for the keyboard, so it is only built.
 for m in medium large huge huge16; do
   case $m in huge16) mf="-mcmodel=huge -msize-t=16" ;; *) mf="-mcmodel=$m" ;; esac
@@ -110,6 +115,8 @@ for v in win16 win31 win30 win2 win1; do
 done
 build "win16-large-cxx" win16-large-cxx.exe $CXX --config=win16.cfg -mcmodel=large -Os hello.cpp &&
   runwin "win16-large-cxx" "Hello, world from smoke! 42" win16-large-cxx.exe
+build "win16-large-atomic" win16-large-atomic.exe $CXX --config=win16.cfg -mcmodel=large -Os atomic.cpp &&
+  runwin "win16-large-atomic" "atomics ok 42 123456789" win16-large-atomic.exe
 
 echo "== 32-bit Windows"
 for v in win32s nt31 nt35 nt351 nt4 win95 win95-crtdll win98 winme win2000 winxp; do
@@ -141,6 +148,26 @@ for v in win32s nt31 nt35 nt351 nt4 win95 win95-crtdll win98 winme win2000 winxp
     { check "check-imports $v-eh" "" $PY "$tools/check-imports.py" $chk "$v-eh.exe"; runwin "$v-eh" "caught boom, 1 destructor ran" "$v-eh.exe"; }
   build "$v-threads" "$v-threads.exe" $CXX --config=$v.cfg -O2 threads.cpp &&
     { check "check-imports $v-threads" "" $PY "$tools/check-imports.py" $chk "$v-threads.exe"; runwin "$v-threads" "threads total 10000 OK" "$v-threads.exe"; }
+done
+
+echo "== 32-bit Windows with picolibc (no C runtime DLL)"
+# nocrt NAME FILE: the program imports no C runtime DLL
+nocrt() {
+  if grep -qiE 'msvcrt|crtdll|ucrtbase' "$2"; then bad "no C runtime DLL $1" /dev/null; else ok "no C runtime DLL $1"; fi
+}
+for v in win32-picolibc nt31-picolibc; do
+  chk=; [ $v = nt31-picolibc ] && chk="--nt 3.10"
+  for p in hello.c:"Hello, world from smoke! 42 123456789 3.25" \
+      hello.cpp:"Hello, world from smoke! 42" \
+      except.cpp:"caught boom, 1 destructor ran" \
+      threads.cpp:"threads total 10000 OK"; do
+    src=${p%%:*} want=${p#*:} t=$v-${src%.*}-${src##*.}
+    case $src in *.cpp) cc=$CXX ;; *) cc=$CC ;; esac
+    build "$t" "$t.exe" $cc --config=$v.cfg -O2 "$src" || continue
+    nocrt "$t" "$t.exe"
+    check "check-imports $t" "" $PY "$tools/check-imports.py" $chk "$t.exe"
+    runwin "$t" "$want" "$t.exe"
+  done
 done
 
 echo "== Windows Vista, 7, 8, 8.1, 10 (32 and 64-bit)"

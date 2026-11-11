@@ -1,0 +1,62 @@
+# The documentation site: https://clang-retro.github.io/dos-sdk/
+# Build it with `pip install -r .docs/requirements.txt` and `mkdocs serve`.
+INHERIT: .docs/base.yml
+site_name: clang-dos SDK
+site_description: C and C++ for MS-DOS with clang, and the clang-retro toolchain packages
+site_url: https://clang-retro.github.io/dos-sdk/
+repo_url: https://github.com/clang-retro/dos-sdk
+repo_name: clang-retro/dos-sdk
+edit_uri: ""
+hooks:
+  - .docs/hooks.py
+
+extra:
+  retro:
+    doxygen: .docs/Doxyfile
+    github: clang-retro/dos-sdk
+    branch: main
+    pages:
+      README.md: dos/index.md
+      packaging/README.md: toolchain.md
+      tvision/README.md: tvision.md
+      curses/README.md: curses.md
+      tests/dos/README.md: dosbox.md
+      classicmac/README.md: mac/classic.md
+      macosx/README.md: mac/macosx.md
+      bench/size/README.md: dev/size.md
+      CONTRIBUTING.md: contributing.md
+
+nav:
+  - Home: index.md
+  - API reference: api/index.html
+  - All clang-retro projects: https://clang-retro.github.io/
+  - Getting started:
+      - The toolchain package: toolchain.md
+      - Choosing a memory model: memory-models.md
+  - DOS programs:
+      - dos/index.md
+      - Building programs: dos/building.md
+      - Segments, stack and far data: dos/segments.md
+      - Near, far and huge pointers: dos/pointers.md
+      - The huge16 model and halloc: dos/huge16.md
+      - Near and far library functions: dos/library.md
+      - Calling conventions and interrupts: dos/conventions.md
+      - C++: dos/cxx.md
+      - Files and random numbers: dos/files.md
+  - Full-screen libraries:
+      - Graphics, console and windows: graphics-and-tui.md
+      - CXL and TCXL: cxl.md
+      - Turbo Vision: tvision.md
+      - PDCurses: curses.md
+      - Running in DOSBox: dosbox.md
+  - Macintosh:
+      - Classic Mac OS: mac/classic.md
+      - Mac OS X on PowerPC: mac/macosx.md
+  - Development:
+      - What you need: dev/requirements.md
+      - Building a sysroot: dev/sysroot.md
+      - Tests: dev/tests.md
+      - Size benchmark: dev/size.md
+      - Packages and CI: dev/ci.md
+  - Contributing: contributing.md
+  - License: license.md
