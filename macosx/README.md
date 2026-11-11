@@ -97,8 +97,10 @@ The tests:
   from 10.3. It links with `-framework Foundation -lobjc`.
 - `tests/macosx/cxx.cpp` is C++17 with libc++: virtual calls,
   `dynamic_cast`, exceptions thrown through frames with destructors, and
-  containers. It runs only when `LIBCXX` is set (see below), and not on
-  10.0.
+  containers. It runs only when `LIBCXX` is set (see below).
+- `tests/macosx/c99.c` uses the C99 library: float and long double math,
+  the classification macros, `<fenv.h>` rounding modes, and the `long long`
+  and `intmax_t` functions. On 10.0 it links with `-lc99` (see below).
 - `tests/libc/hello.c` and `tests/libc/stdin.c`, shared with the DOS tests.
 
 ## Compiler helpers and the linker
@@ -136,8 +138,8 @@ has from 10.3; `NS_DURING` works everywhere.
 ## C++
 
 `scripts/build-libcxx-macosx.sh` builds static libc++, libc++abi and
-libunwind for 10.4 and 10.5 (without threads, locales, wide characters or
-`<filesystem>`):
+libunwind (without threads, locales, wide characters or `<filesystem>`).
+For 10.4 and 10.5:
 
     PATH=/path/to/cctools-ppc/bin:$PATH \
     LLVM_SRC=/path/to/llvm BIN=/path/to/llvm/build/bin \
@@ -146,9 +148,42 @@ libunwind for 10.4 and 10.5 (without threads, locales, wide characters or
 
 Build programs with `-nostdinc++ -isystem $PREFIX/include/c++/v1` and link
 with `-nostdlib++ -L$PREFIX/lib -lc++ -lc++abi -lunwind`. Set
-`LIBCXX=$PREFIX` for the test runner to add the C++ test. The 10.0 headers
-are not C++-clean yet (`stdlib.h` typedefs `wchar_t`), so there is no C++
-for 10.0 so far.
+`LIBCXX=$PREFIX` for the test runner to add the C++ test.
+
+For 10.0, prepare the sysroot as below, then run the script with
+`OSX_VERSION=10.0` and `SDK` set to the sysroot, and link programs with
+`-lc99` as well.
+
+## The C99 library for 10.0
+
+Mac OS X 10.0 to 10.2 have little of C99's library: no float or long double
+math (`sinf`, `roundl`), no `round`, `trunc` or `fma`, no `<fenv.h>`,
+`<wchar.h>`, `llabs` or `strtoll`. 10.3 has nearly all of it. For C++, and
+for C programs that want them, add them to a 10.0 sysroot:
+
+    sh scripts/fix-macosx-10.0-headers.sh /path/to/sysroot
+    PATH=/path/to/cctools-ppc/bin:$PATH \
+    PICOLIBC_SRC=/path/to/picolibc BIN=/path/to/llvm/build/bin \
+    SYSROOT=/path/to/sysroot scripts/build-c99-macosx.sh
+
+The first script makes 10.0's `intptr_t` and `uintptr_t` integers; 10.0
+declares them as pointers. The second builds `libc99.a`:
+
+- the float functions, the double ones 10.0 lacks and `<fenv.h>` from
+  picolibc's libm. It takes nothing that libSystem already has, so
+  programs keep Apple's `sin` and `printf`;
+- the long double functions, which call the double ones (long double is
+  double before 10.4);
+- `llabs`, `lldiv`, `strtoll` and the like, on the BSD `strtoq`.
+
+It installs the library in `usr/local/lib` of the sysroot and headers in
+`usr/local/include`: additions to `<math.h>`, `<stdlib.h>`, `<inttypes.h>`
+and `<ctype.h>` (whose functions 10.0 has only as macros), and a `<fenv.h>`
+and `<wchar.h>` with the types. clang searches `usr/local/include` first,
+and each header includes the system's. Link with `-lc99`.
+
+clang itself accepts 10.0's `typedef int wchar_t` in `<stdlib.h>`, which
+C++ would reject, in system headers.
 
 ## Mac OS X 10.0
 

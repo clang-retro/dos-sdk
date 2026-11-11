@@ -14,8 +14,11 @@
 #   OPTS      optimization levels (default: O0 Os O2)
 #   RELOCS    relocation models (default: pic dynamic-no-pic)
 #   TIMEOUT   seconds QEMU may run (default: 900)
-#   LIBCXX    install directory of scripts/build-libcxx-macosx.sh; when set
-#             (10.4 and 10.5 only), the C++ test is built and run too
+#   LIBCXX    install directory of scripts/build-libcxx-macosx.sh, built
+#             for this version; when set, the C++ test is built and run too
+#
+# For 10.0 the sysroot needs libc99.a (scripts/build-c99-macosx.sh), which
+# the C99 and C++ tests link with.
 : "${BIN:?set BIN}" "${SDK:?set SDK}" "${OSX_IMAGE:?set OSX_IMAGE}"
 QEMU=${QEMU:-qemu-system-ppc}
 version=${OSX_VERSION:-10.4}
@@ -37,6 +40,9 @@ mkdir -p "$out/disk"
 cd "$out" || exit 1
 pass=0
 fail=0
+# Mac OS X 10.0 to 10.2 take the C99 functions from libc99.a.
+c99=
+[ "$target" = 10.0 ] && c99=-lc99
 
 # The guest runs run.sh, which prints "=== NAME" before each test's
 # output.
@@ -76,10 +82,11 @@ for r in ${RELOCS:-pic dynamic-no-pic}; do
       add "builtins-$s" "$tests/macosx/builtins.c" "" -$o $rf $cf
       add "objc-$s" "$tests/macosx/objc.m" "" -$o $rf $cf \
         -framework Foundation -lobjc
-      [ -n "$LIBCXX" ] && [ "$target" != 10.0 ] &&
+      add "c99-$s" "$tests/macosx/c99.c" "" -$o $rf $cf $c99
+      [ -n "$LIBCXX" ] &&
         add "cxx-$s" "$tests/macosx/cxx.cpp" "" -$o $rf $cf -std=c++17 \
           --driver-mode=g++ -nostdinc++ -isystem "$LIBCXX/include/c++/v1" \
-          -nostdlib++ -L"$LIBCXX/lib" -lc++ -lc++abi -lunwind
+          -nostdlib++ -L"$LIBCXX/lib" -lc++ -lc++abi -lunwind $c99
       add "hello-$s" "$tests/libc/hello.c" "a b" -$o $rf $cf
       add "stdin-$s" "$tests/libc/stdin.c" "<stdin.txt" -$o $rf $cf
     done
@@ -115,7 +122,7 @@ check() {
 }
 for n in $names; do
   case $n in
-  abi-*|builtins-*|objc-*|cxx-*) check "$n" "ALL PASSED" ;;
+  abi-*|builtins-*|objc-*|c99-*|cxx-*) check "$n" "ALL PASSED" ;;
   hello-*) check "$n" "argv\[2\]=<b>" ;;
   stdin-*) check "$n" "lines=2" ;;
   esac
