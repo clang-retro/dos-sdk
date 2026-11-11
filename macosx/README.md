@@ -188,7 +188,8 @@ C++ would reject, in system headers.
 ## Mac OS X 10.0
 
 Set `OSX_VERSION=10.0`, point `SDK` at a 10.0 sysroot and `OSX_IMAGE` at a
-10.0 image. All 60 tests pass (C++ is not run on 10.0).
+10.0 image. All 84 tests pass, with `LIBCXX` set and the sysroot prepared as
+in "The C99 library for 10.0".
 
 ### The sysroot
 
@@ -276,7 +277,7 @@ seconds for it, then does the same as the 10.4 runner.
 ## Mac OS X 10.5
 
 `OSX_VERSION=10.5` builds the tests for 10.4 against the 10.4 SDK, as
-usual, and runs them on a 10.5 image. They pass, 72 of 72 with `LIBCXX`
+usual, and runs them on a 10.5 image. They pass, 84 of 84 with `LIBCXX`
 set, on 10.5.4
 (9E25). Building against the 10.5 SDK is a later step.
 
