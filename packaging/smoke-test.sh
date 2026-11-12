@@ -67,6 +67,9 @@ prgcheck() {
 # qemu-irix runs IRIX programs with no IRIX system: share/clang-dos/build-qemu-irix.sh.
 runirix() {
   if [ -n "${QEMU_IRIX_DIR:-}" ] && [ -x "$QEMU_IRIX_DIR/$3" ]; then
+    # qemu-irix, like IRIX, runs only files marked executable, and a
+    # Windows-hosted linker (under Wine) writes them without the mode bits.
+    chmod +x "$4"
     check "run $1" "$2" "$QEMU_IRIX_DIR/$3" "./$4" smoke
   else
     skip=$((skip + 1))
