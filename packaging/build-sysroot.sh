@@ -13,13 +13,16 @@
 #                   win-vista-x64   the same, 64-bit
 #                   m68k-amigaos    AmigaOS 1.3 to 3.x, every 68k CPU
 #                   m68k-atari-tos  Atari ST, STe, TT and Falcon (TOS, GEM)
+#                   mips-sgi-irix   SGI IRIX 5.3 and 6.x, static programs, in
+#                                   the o32, n32 and 64 ABIs
 #   OUTPUT          the sysroot directory
 #   BIN             directory with clang, llvm-ar and so on (and jwlink)
 #   LLVM_SRC        clang-dos/llvm checkout
 #   PICOLIBC_SRC    clang-dos/picolibc checkout (i8086-msdos, m68k-amigaos,
-#                   m68k-atari-tos, win32-picolibc)
+#                   m68k-atari-tos, mips-sgi-irix, win32-picolibc)
 #   AMIGA_SDK       clang-dos/amiga-sdk checkout (m68k-amigaos)
 #   ATARI_SDK       clang-dos/atari-sdk checkout (m68k-atari-tos)
+#   UNIX_SDK        clang-retro/unix-sdk checkout (mips-sgi-irix)
 #   TVISION_SRC     magiblot/tvision checkout (i8086-msdos, optional; see
 #                   tvision/README.md for the commit)
 #   WIN16_SDK       clang-dos/win16-sdk checkout (i8086-msdos: Windows 1.x-3.x)
@@ -63,6 +66,13 @@ m68k-atari-tos)
   : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${ATARI_SDK:?set ATARI_SDK}"
   export PICOLIBC_SRC
   sh "$ATARI_SDK/build-sysroot.sh" "$SYSROOT"
+  ;;
+mips-sgi-irix)
+  # picolibc with its IRIX layer and the builtins, for each ABI, from
+  # unix-sdk. Nothing from IRIX is in it.
+  : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${UNIX_SDK:?set UNIX_SDK}"
+  export PICOLIBC_SRC
+  sh "$UNIX_SDK/irix/build-sysroot.sh" "$SYSROOT"
   ;;
 *)
   echo "unknown sysroot $name" >&2; exit 1 ;;

@@ -72,7 +72,7 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = schedule ]; then
             # Skip the nightly when no repository has moved since the last one.
             head() { git ls-remote "https://github.com/clang-retro/$1" "refs/heads/$2" | cut -f1; }
-            now="llvm $(head llvm main) picolibc $(head picolibc main) jwlink $(head JWlink master) dos-sdk $GITHUB_SHA win16-sdk $(head win16-sdk main) win32-sdk $(head win32-sdk main) amiga-sdk $(head amiga-sdk main) atari-sdk $(head atari-sdk main)"
+            now="llvm $(head llvm main) picolibc $(head picolibc main) jwlink $(head JWlink master) dos-sdk $GITHUB_SHA win16-sdk $(head win16-sdk main) win32-sdk $(head win32-sdk main) amiga-sdk $(head amiga-sdk main) atari-sdk $(head atari-sdk main) unix-sdk $(head unix-sdk main)"
             # No nightly yet (or an unreadable one) means build it.
             body=$(gh release view nightly --json body -q .body 2>/dev/null || true)
             last=$(printf '%s\n' "$body" | sed -n 's/^<!-- sources: \(.*\) -->$/\1/p')
@@ -166,7 +166,7 @@ jobs:
             echo
             echo "- \`clang-dos-linux-x86_64.tar.xz\`: Linux x86_64 host (Ubuntu 24.04, Debian 13, Fedora 39 or newer)"
             echo "- \`clang-dos-windows-x86_64.zip\` or \`.7z\` (same contents): Windows 10 or later, x86_64 host"
-            echo "- \`clang-dos-sysroot-NAME.tar.xz\`: each sysroot of the packages alone (i8086-msdos, m68k-amigaos, m68k-atari-tos and the Windows ones), for \`packaging/get-toolchain.sh -s NAME\`"
+            echo "- \`clang-dos-sysroot-NAME.tar.xz\`: each sysroot of the packages alone (i8086-msdos, m68k-amigaos, m68k-atari-tos, mips-sgi-irix and the Windows ones), for \`packaging/get-toolchain.sh -s NAME\`"
             echo "- \`clang-dos-win16-sdk.tar.xz\`, \`clang-dos-win32-sdk.tar.xz\`: the Windows SDKs alone (headers, import lists, libraries, config files and licences), to unpack over a package; every file in them can be passed on (see NOTICE.md in share/licenses)"
             echo
             echo "Unpack anywhere and see README.md inside for the targets and their \`--config\` files."
