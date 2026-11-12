@@ -51,6 +51,9 @@ triple, the sysroot and the linker. Pass it with `--config=NAME.cfg`:
 | Windows 10 and 11 | `win10.cfg`, `win10-x64.cfg` | `i686`/`x86_64-pc-windows10.0-gnu` | PE, msvcrt.dll, libc++ |
 | AmigaOS 1.3 to 3.x | `amiga.cfg` | `m68k-amigaos` | hunk executable |
 | Atari ST, STe, TT, Falcon | `atari.cfg` | `m68k-atari-tos` | GEMDOS PRG |
+| SGI IRIX 5.3 and 6.x, o32 | `irix.cfg` | `mips-sgi-irix6.5` | ELF, static, picolibc |
+| SGI IRIX 6.x, n32 | `irixn32.cfg` | `mips64-sgi-irix6.5 -mabi=n32` | ELF, static, picolibc |
+| SGI IRIX 6.x, 64-bit | `irix64.cfg` | `mips64-sgi-irix6.5 -mabi=64` | ELF, static, picolibc |
 
 The DOS and Win16 targets need no config file: `--target=i8086-pc-msdos`
 (or `i8086-pc-win16...`) is enough, since clang finds the sysroot in
@@ -251,22 +254,46 @@ clang --config=atari.cfg -mcpu=68030 -O2 share/clang-dos/atari-examples/gemhello
   STe, TT and Falcon there; details are in
   `share/clang-dos/docs/atari-README.md`.
 
+## SGI IRIX
+
+```sh
+clang --config=irixn32.cfg -O2 hello.c -o hello     # n32, MIPS III: IRIX 6.x
+clang --config=irix.cfg -O2 hello.c -o hello        # o32, MIPS II: IRIX 5.3 and 6.x
+```
+
+- The sysroot is `mips-sgi-irix/`, laid out like an IRIX system:
+  `usr/include`, and `usr/lib` (o32), `usr/lib32` (n32) and `usr/lib64`
+  (64), each with picolibc and its IRIX layer (startup code, files, `stat`,
+  `malloc`, time, errors) and the compiler-rt builtins. Nothing in it comes
+  from IRIX, so it is all redistributable. Programs are static: the config
+  files pass `-static`.
+- `ld.lld` links ordinary IRIX ELF executables (entry `__start`, text at
+  0x400000 or 0x10000000, PIC code).
+- `share/clang-dos/build-qemu-irix.sh` builds qemu-irix, which runs IRIX
+  programs on Linux with no IRIX system. Programs are tested there in all
+  three ABIs.
+- `share/clang-dos/import-irix.sh` makes a separate sysroot from your own
+  copy of IRIX's headers and libraries, for programs that link against
+  IRIX's `libc.so.1` (not tested yet). Details are in
+  `share/clang-dos/docs/irix-README.md`.
+
 ## Checking the package
 
 `smoke-test.sh` builds `examples/` for every target above and checks the
 results with `ne-check.py` and `check-imports.py`. With
 [emu2](https://github.com/dmsc/emu2), Wine and vamos (`pip install amitools
 machine68k==0.3.0`) on `PATH` (or `EMU2=`, `WINE=` and `VAMOS=`), and
-Hatari with `EMUTOS_DIR` set, it runs them too:
+Hatari with `EMUTOS_DIR` set, and qemu-irix in `QEMU_IRIX_DIR`, it runs
+them too:
 
 ```sh
 sh smoke-test.sh                          # Linux package
 HOSTRUN=wine sh smoke-test.sh             # Windows package, from Linux with Wine
 ```
 
-Every program is tested only in emu2, Wine, Amiga emulators and Hatari; none has
-run on real DOS, Windows 1.x-3.x, Win32s, NT 3.x, 9x, 2000, XP, later
-Windows, Amiga or Atari machines yet.
+Every program is tested only in emu2, Wine, Amiga emulators, Hatari and
+qemu-irix; none has run on real DOS, Windows 1.x-3.x, Win32s, NT 3.x, 9x,
+2000, XP, later Windows, Amiga, Atari or SGI machines yet.
 
 ## Contents
 
@@ -282,9 +309,11 @@ sysroots/win-vista/     mingw-w64 for Vista to 11, 32-bit, with libc++
 sysroots/win-vista-x64/ the same, 64-bit
 m68k-amigaos/      AmigaOS sysroot: picolibc, builtins, AmigaOS headers, libamiga.a
 m68k-atari-tos/    Atari TOS sysroot: picolibc, builtins, TOS/GEM headers, libgem
+mips-sgi-irix/     SGI IRIX sysroot: picolibc and builtins for o32, n32 and 64
 share/clang-dos/   ne-check.py, check-imports.py, win16-imports.py, build-modern-sysroot.sh,
                    amiga-ndk.py (with lha.py, fd2stub.py), amiga-examples/,
-                   hatari-run.sh, atari-examples/, docs/
+                   hatari-run.sh, atari-examples/, build-qemu-irix.sh,
+                   import-irix.sh, irix-examples/, docs/
 examples/          hello.c, hello.cpp, except.cpp, threads.cpp, curses.c
 BRANCHES.txt       the source branches and commits this was built from
 ```

@@ -16,6 +16,9 @@
 #   WIN32_SDK     clang-dos/win32-sdk checkout (config files, tools, README)
 #   AMIGA_SDK     clang-dos/amiga-sdk checkout (NDK installer, examples, README)
 #   ATARI_SDK     clang-dos/atari-sdk checkout (Hatari runner, examples, README)
+#   UNIX_SDK      clang-retro/unix-sdk checkout (IRIX examples, qemu-irix and
+#                 import scripts, README); optional, with the mips-sgi-irix
+#                 sysroot
 #   BRANCHES      optional: BRANCHES.txt to include
 set -e
 host=${1:?usage: assemble.sh linux|windows OUTDIR} out=${2:?}
@@ -61,6 +64,9 @@ cp -R "$SYSROOTS/i8086-msdos" "$out/i8086-msdos"
 # The driver looks for the AmigaOS sysroot next to bin, as for DOS.
 cp -R "$SYSROOTS/m68k-amigaos" "$out/m68k-amigaos"
 cp -R "$SYSROOTS/m68k-atari-tos" "$out/m68k-atari-tos"
+irix=
+if [ -n "${UNIX_SDK:-}" ] && [ -d "$SYSROOTS/mips-sgi-irix" ]; then irix=1; fi
+if [ -n "$irix" ]; then cp -R "$SYSROOTS/mips-sgi-irix" "$out/mips-sgi-irix"; fi
 for s in win9x-msvcrt win9x-crtdll win2k-xp win32-picolibc win-vista win-vista-x64; do
   cp -R "$SYSROOTS/$s" "$out/sysroots/"
 done
@@ -87,13 +93,20 @@ cp "$AMIGA_SDK"/examples/*.c "$out/share/clang-dos/amiga-examples/"
 mkdir -p "$out/share/clang-dos/atari-examples"
 cp "$ATARI_SDK"/examples/*.c "$out/share/clang-dos/atari-examples/"
 cp "$ATARI_SDK/tools/hatari-run.sh" "$out/share/clang-dos/"
+if [ -n "$irix" ]; then
+  mkdir -p "$out/share/clang-dos/irix-examples"
+  cp "$UNIX_SDK"/irix/examples/*.c "$out/share/clang-dos/irix-examples/"
+  cp "$UNIX_SDK/irix/tools/build-qemu-irix.sh" "$UNIX_SDK/irix/tools/import-irix.sh" \
+    "$out/share/clang-dos/"
+  cp "$UNIX_SDK/irix/README.md" "$out/share/clang-dos/docs/irix-README.md"
+fi
 cp "$sdk/README.md" "$out/share/clang-dos/docs/dos-sdk-README.md"
 cp "$WIN16_SDK/README.md" "$out/share/clang-dos/docs/win16-README.md"
 cp "$WIN32_SDK/README.md" "$out/share/clang-dos/docs/win32-README.md"
 cp "$AMIGA_SDK/README.md" "$out/share/clang-dos/docs/amiga-README.md"
 cp "$ATARI_SDK/README.md" "$out/share/clang-dos/docs/atari-README.md"
 cp "$sdk/docs/memory-models.md" "$out/share/clang-dos/docs/"
-for os in msdos amigaos tos; do
+for os in msdos amigaos tos irix; do
   if [ -f "$PICOLIBC_SRC/libos/$os/README.md" ]; then
     cp "$PICOLIBC_SRC/libos/$os/README.md" \
       "$out/share/clang-dos/docs/picolibc-$os-README.md"
@@ -115,6 +128,7 @@ for s in win16-sdk:$WIN16_SDK win32-sdk:$WIN32_SDK; do
   if [ -f "$d/NOTICE.md" ]; then cp "$d/NOTICE.md" "$out/share/licenses/$n/"; fi
 done
 cp "$ATARI_SDK/LICENSE" "$out/share/licenses/atari-sdk-LICENSE"
+if [ -n "$irix" ]; then cp "$UNIX_SDK/LICENSE" "$out/share/licenses/unix-sdk-LICENSE"; fi
 cp "$LLVM_SRC/llvm/LICENSE.TXT" "$out/share/licenses/LLVM-LICENSE.TXT"
 cp "$PICOLIBC_SRC/COPYING.picolibc" "$out/share/licenses/" 2>/dev/null || true
 cp "$JWLINK_SRC/Ver/license.txt" "$out/share/licenses/JWlink-OWPL.txt" 2>/dev/null || true
