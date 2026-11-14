@@ -9,7 +9,7 @@
 #   HOSTRUN=wine sh smoke-test.sh    test a Windows-hosted package under Wine
 #   EMU2=/path/to/emu2 WINE=wine VAMOS=vamos
 #   EMUTOS_DIR=dir (with hatari on PATH)
-#   QEMU_IRIX_DIR=dir (qemu-irix, qemu-irixn32, qemu-irix64)
+#   QEMU_IRIX_DIR=dir (qemu-irix, qemu-irixn32, qemu-irix64, qemu-solaris)
 #                                    runners for the outputs (optional)
 #   OUT=dir                          where to build (default: ./smoke-out)
 set -u
@@ -223,6 +223,15 @@ if [ -d "$PKG/mips-sgi-irix" ]; then
     build "irix-$abi" "irix-$abi" $CC --config=$cfg -O2 hello.c &&
       runirix "irix-$abi" "Hello, world from smoke! 42 123456789 3.25" "$emu" "irix-$abi"
   done
+fi
+
+if [ -d "$PKG/sparc-sun-solaris" ]; then
+  echo "== Solaris (sparc-sun-solaris)"
+  # qemu-solaris, built with qemu-irix, runs SPARC V8 programs; V8+ ones
+  # (for UltraSPARC) are only built.
+  build "solaris-v8" "solaris-v8" $CC --config=solaris.cfg -O2 hello.c &&
+    runirix "solaris-v8" "Hello, world from smoke! 42 123456789 3.25" qemu-solaris "solaris-v8"
+  build "solaris-v8plus" "solaris-v8plus" $CC --config=solaris.cfg -mcpu=v9 -O2 hello.c
 fi
 
 echo "== Microsoft SDKs and DDKs (import-ms-sdk.py with fake kits)"
