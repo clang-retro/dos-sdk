@@ -74,6 +74,13 @@ mips-sgi-irix)
   export PICOLIBC_SRC
   sh "$UNIX_SDK/irix/build-sysroot.sh" "$SYSROOT"
   ;;
+sparc-sun-solaris)
+  # picolibc with its Solaris layer and the builtins, for SPARC V8, from
+  # unix-sdk. Nothing from Solaris is in it.
+  : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${UNIX_SDK:?set UNIX_SDK}"
+  export PICOLIBC_SRC
+  sh "$UNIX_SDK/solaris/build-sysroot.sh" "$SYSROOT"
+  ;;
 *)
   echo "unknown sysroot $name" >&2; exit 1 ;;
 esac

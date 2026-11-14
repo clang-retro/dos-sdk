@@ -309,7 +309,7 @@ jobs:
       matrix:
         include:
           - group: dos
-            names: i8086-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix
+            names: i8086-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix sparc-sun-solaris
             source: picolibc
             winsdk: win16-sdk
           - group: windows
@@ -486,6 +486,7 @@ jobs:
             libos/amigaos/README.md
             libos/tos/README.md
             libos/irix/README.md
+            libos/solaris/README.md
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - uses: actions/checkout@v4
