@@ -54,7 +54,7 @@ triple, the sysroot and the linker. Pass it with `--config=NAME.cfg`:
 | SGI IRIX 5.3 and 6.x, o32 | `irix.cfg` | `mips-sgi-irix6.5` | ELF, static, picolibc |
 | SGI IRIX 6.x, n32 | `irixn32.cfg` | `mips64-sgi-irix6.5 -mabi=n32` | ELF, static, picolibc |
 | SGI IRIX 6.x, 64-bit | `irix64.cfg` | `mips64-sgi-irix6.5 -mabi=64` | ELF, static, picolibc |
-| Solaris 2.5 to 10, SPARC | `solaris.cfg` | `sparc-sun-solaris -mcpu=v8` | ELF, static, picolibc |
+| Solaris 2.5 to 11.4, SPARC | `solaris.cfg` | `sparc-sun-solaris -mcpu=v8` | ELF, static, picolibc |
 
 The DOS and Win16 targets need no config file: `--target=i8086-pc-msdos`
 (or `i8086-pc-win16...`) is enough, since clang finds the sysroot in
@@ -291,7 +291,7 @@ clang --config=solaris.cfg -mcpu=v9 -O2 hello.c -o hello   # V8+: UltraSPARC and
   compiler-rt builtins. Nothing in it comes from Solaris, so it is all
   redistributable. Programs are static: the config file passes `-static`.
 - `ld.lld` links ordinary 32-bit Solaris ELF executables (entry `_start`,
-  text at 0x10000), which run on Solaris 2.5 to 10.
+  text at 0x10000), which run on Solaris 2.5 to 11.4.
 - qemu-solaris, which `share/clang-dos/build-qemu-irix.sh` builds too,
   runs V8 programs on Linux with no Solaris system; programs are tested
   there. Details are in `share/clang-dos/docs/solaris-README.md`.
