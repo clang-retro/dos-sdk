@@ -8,8 +8,8 @@
 #   LLVM_SRC  clang-dos/llvm checkout
 #   PREFIX    install directory
 #   WORK      build directory (default: ./build-llvm-HOST)
-#   TARGETS   LLVM_TARGETS_TO_BUILD (default: X86;PowerPC;Mips, Mips for
-#             SGI IRIX)
+#   TARGETS   LLVM_TARGETS_TO_BUILD (default: X86;PowerPC;Mips;Sparc, Mips
+#             for SGI IRIX, Sparc for Solaris)
 #   EXPERIMENTAL_TARGETS
 #             LLVM_EXPERIMENTAL_TARGETS_TO_BUILD (default: M68k, for AmigaOS)
 #   LAUNCHER  compiler launcher, such as ccache (default: ccache if found)
@@ -23,7 +23,7 @@ set -e
 host=${1:?usage: build-llvm.sh linux|windows}
 : "${LLVM_SRC:?set LLVM_SRC}" "${PREFIX:?set PREFIX}"
 WORK=${WORK:-$PWD/build-llvm-$host}
-TARGETS=${TARGETS:-X86;PowerPC;Mips}
+TARGETS=${TARGETS:-X86;PowerPC;Mips;Sparc}
 EXPERIMENTAL_TARGETS=${EXPERIMENTAL_TARGETS-M68k}
 JOBS=${JOBS:-$(nproc)}
 if [ -z "${LAUNCHER+x}" ]; then LAUNCHER=$(command -v ccache || true); fi
