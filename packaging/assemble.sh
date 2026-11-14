@@ -77,6 +77,14 @@ done
 cp "$WIN16_SDK/tools/ne-check.py" "$WIN16_SDK/tools/win16-imports.py" \
   "$WIN32_SDK/tools/check-imports.py" "$WIN32_SDK/tools/msvcrt-versions.txt" \
   "$WIN32_SDK/scripts/build-modern-sysroot.sh" "$out/share/clang-dos/"
+# Kernel-mode drivers (win32-sdk's *-ddk.cfg) and VxDs: the checkers' data,
+# the linker for VxDs and the test driver and VxD.
+for f in tools/kernel-versions.txt scripts/fix-ddk-headers.sh \
+    tools/vxd-link.py tools/vxd-check.py; do
+  if [ -f "$WIN32_SDK/$f" ]; then cp "$WIN32_SDK/$f" "$out/share/clang-dos/"; fi
+done
+if [ -d "$WIN32_SDK/tests/ddk" ]; then cp -R "$WIN32_SDK/tests/ddk" "$out/share/clang-dos/ddk"; fi
+if [ -d "$WIN32_SDK/vxd" ]; then cp -R "$WIN32_SDK/vxd" "$out/share/clang-dos/vxd"; fi
 # Makes sysroots from the user's own copies of Microsoft's SDKs and DDKs.
 if [ -f "$WIN32_SDK/tools/import-ms-sdk.py" ]; then
   cp "$WIN32_SDK/tools/import-ms-sdk.py" "$WIN32_SDK/tools/ms_oldlib.py" \
