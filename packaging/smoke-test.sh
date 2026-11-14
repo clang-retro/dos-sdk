@@ -41,10 +41,11 @@ build() {
   if "$@" -o "$o" >"$n.log" 2>&1 && [ -s "$o" ]; then ok "build $n"; return 0; fi
   bad "build $n" "$n.log"; return 1
 }
-# check NAME EXPECTED COMMAND...: the output must contain EXPECTED
+# check NAME EXPECTED COMMAND...: the output must contain EXPECTED (within
+# $limit seconds, 60 unless set)
 check() {
   n=$1 want=$2; shift 2
-  if timeout 60 "$@" >"$n.out" 2>&1 && grep -q "$want" "$n.out"; then ok "$n"; else bad "$n" "$n.out"; fi
+  if timeout "${limit:-60}" "$@" >"$n.out" 2>&1 && grep -q "$want" "$n.out"; then ok "$n"; else bad "$n" "$n.out"; fi
 }
 rundos() {
   if [ -n "$EMU2" ]; then check "run $1" "$2" "$EMU2" "$3" smoke; else skip=$((skip + 1)); fi
@@ -232,6 +233,25 @@ if [ -d "$PKG/sparc-sun-solaris" ]; then
   build "solaris-v8" "solaris-v8" $CC --config=solaris.cfg -O2 hello.c &&
     runirix "solaris-v8" "Hello, world from smoke! 42 123456789 3.25" qemu-solaris "solaris-v8"
   build "solaris-v8plus" "solaris-v8plus" $CC --config=solaris.cfg -mcpu=v9 -O2 hello.c
+fi
+
+echo "== Windows kernel-mode drivers and VxDs"
+# The test driver with every *-ddk.cfg, checked and (in a 32-bit and the
+# default 64-bit Wine prefix) loaded; the test VxD, checked (no emulator
+# here runs VxDs).
+if [ -z "$HOSTRUN" ] && [ -f "$tools/ddk/run-tests.sh" ]; then
+  limit=900; check "ddk drivers" "ddk tests: [0-9]* passed, 0 failed" \
+    env CFGDIR="$PKG/bin" WORK="$OUT/ddk" WINE="$WINE" PYTHON="$PY" sh "$tools/ddk/run-tests.sh"
+  limit=
+else
+  skip=$((skip + 1))
+fi
+if [ -z "$HOSTRUN" ] && [ -f "$tools/vxd/run-tests.sh" ]; then
+  limit=300; check "vxd" "vxd tests: 9 passed, 0 failed" \
+    env CFGDIR="$PKG/bin" WORK="$OUT/vxd" PYTHON="$PY" sh "$tools/vxd/run-tests.sh"
+  limit=
+else
+  skip=$((skip + 1))
 fi
 
 echo "== Microsoft SDKs and DDKs (import-ms-sdk.py with fake kits)"
