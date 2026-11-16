@@ -12,7 +12,8 @@
 #             for SGI IRIX, Sparc for Solaris)
 #   EXPERIMENTAL_TARGETS
 #             LLVM_EXPERIMENTAL_TARGETS_TO_BUILD (default: M68k, for AmigaOS,
-#             and Z80, for CP/M-80, when the checkout has it)
+#             and Z80, for CP/M-80, and MOS, for 6502 systems, when the
+#             checkout has them)
 #   LAUNCHER  compiler launcher, such as ccache (default: ccache if found)
 #   JOBS      parallel jobs (default: nproc)
 #
@@ -29,6 +30,9 @@ if [ -z "${EXPERIMENTAL_TARGETS+x}" ]; then
   EXPERIMENTAL_TARGETS=M68k
   if [ -d "$LLVM_SRC/llvm/lib/Target/Z80" ]; then
     EXPERIMENTAL_TARGETS="$EXPERIMENTAL_TARGETS;Z80"
+  fi
+  if [ -d "$LLVM_SRC/llvm/lib/Target/MOS" ]; then
+    EXPERIMENTAL_TARGETS="$EXPERIMENTAL_TARGETS;MOS"
   fi
 fi
 JOBS=${JOBS:-$(nproc)}
