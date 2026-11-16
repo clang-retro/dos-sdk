@@ -37,7 +37,7 @@ keep="clang clang++ clang-cpp clang-cl clang-format clang-scan-deps lld ld.lld
  lld-link llvm-ar llvm-ranlib llvm-nm llvm-objcopy llvm-objdump llvm-strip
  llvm-size llvm-readobj llvm-readelf llvm-rc llvm-windres llvm-dlltool llvm-lib
  llvm-cxxfilt llvm-strings llvm-symbolizer llvm-ml llvm-elf2hunk
- llvm-elf2tos"
+ llvm-elf2tos llvm-exe2cmd"
 for t in $keep; do
   if [ -e "$inst/bin/$t$x" ] || [ -L "$inst/bin/$t$x" ]; then
     if [ -n "$x" ]; then
