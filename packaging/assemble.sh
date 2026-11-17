@@ -7,7 +7,8 @@
 #   OUTDIR        the package directory (replaced)
 #   LLVM_PREFIX   the install directory from build-llvm.sh for HOST
 #   JWLINK        jwlink (or jwlink.exe) for HOST
-#   WIDL_DIR      widl and midl for HOST, from build-widl.sh (optional)
+#   WIDL_DIR      widl, midl and tlbimport for HOST, from build-widl.sh
+#                 (optional)
 #   SYSROOTS      directory with the sysroots from build-sysroot.sh, one
 #                 subdirectory per name
 #   LLVM_SRC      clang-dos/llvm checkout (licence)
@@ -59,9 +60,10 @@ fi
 cp -R "$inst/lib/clang" "$out/lib/"
 cp "$JWLINK" "$out/bin/jwlink$x"
 chmod +x "$out/bin/jwlink$x"
-# The IDL compiler: widl, and midl, which takes MIDL's options and runs it.
+# The IDL compiler: widl, and midl, which takes MIDL's options and runs it;
+# and tlbimport, which clang runs for #import of a type library.
 if [ -n "${WIDL_DIR:-}" ]; then
-  cp "$WIDL_DIR/widl$x" "$WIDL_DIR/midl$x" "$out/bin/"
+  cp "$WIDL_DIR/widl$x" "$WIDL_DIR/midl$x" "$WIDL_DIR/tlbimport$x" "$out/bin/"
   mkdir -p "$out/share/licenses/widl"
   cp "$WIDL_DIR/widl-NOTICE.txt" "$WIDL_DIR/widl-LGPL-2.1.txt" "$out/share/licenses/widl/"
 else

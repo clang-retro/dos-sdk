@@ -172,6 +172,17 @@ if [ -x "$PKG/bin/midl" ] || [ -f "$PKG/bin/midl.exe" ]; then
     ok "midl smoke.odl"
     build "typelib" typelib.exe $CC --config=winxp.cfg -O2 typelib.c smoke_i.c -loleaut32 -luuid &&
       runwin "typelib" "typelib SmokeLib: 2 types, ISmoke 2 functions 2 properties" typelib.exe
+    # The headers #import makes of it, used from C++ with the COM support
+    # library.
+    if [ -n "$HOSTRUN" ]; then TLBIMPORT="$HOSTRUN $PKG/bin/tlbimport.exe"; else TLBIMPORT="$PKG/bin/tlbimport"; fi
+    if $TLBIMPORT -o . -L "$PKG/sysroots/win2k-xp/lib" smoke.tlb >tlbimport.log 2>&1 &&
+      [ -s smoke.tlh ] && [ -s smoke.tli ]; then
+      ok "tlbimport smoke.tlb"
+      build "import" import.exe $CXX --config=winxp.cfg -O2 -fms-extensions import.cpp -x c smoke_i.c &&
+        runwin "import" "import SmokeLib::ISmoke ok" import.exe
+    else
+      bad "tlbimport smoke.tlb" tlbimport.log
+    fi
   else
     bad "midl smoke.odl" midl.log
   fi

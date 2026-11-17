@@ -244,7 +244,7 @@ jobs:
           ref: ${{ steps.refs.outputs.jwlink }}
           path: jwlink
           persist-credentials: false
-      - run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends gcc-mingw-w64-i686
+      - run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends gcc-mingw-w64-i686 g++-mingw-w64-i686
       - name: Build JWlink
         run: |
           JWLINK_SRC=$PWD/jwlink sh sdk/packaging/build-jwlink.sh linux out/jwlink
@@ -580,7 +580,7 @@ jobs:
           done
           case ${{ matrix.host }} in linux) jw=jwlink-bin/jwlink ;; windows) jw=jwlink-bin/jwlink.exe ;; esac
           name=clang-dos-${{ matrix.host }}-x86_64
-          chmod +x widl-bin/*/widl* widl-bin/*/midl*
+          chmod +x widl-bin/*/widl* widl-bin/*/midl* widl-bin/*/tlbimport*
           LLVM_PREFIX=$PWD/llvm-install JWLINK=$PWD/$jw SYSROOTS=$PWD/sysroots \
           WIDL_DIR=$PWD/widl-bin/${{ matrix.host }} \
           LLVM_SRC=$PWD/llvm PICOLIBC_SRC=$PWD/picolibc JWLINK_SRC=$PWD/jwlink \

@@ -318,7 +318,8 @@ qemu-irix; none has run on real DOS, Windows 1.x-3.x, Win32s, NT 3.x, 9x,
 
 ```
 bin/               clang, clang++, lld, llvm-ar/nm/objdump/rc/dlltool/elf2hunk/elf2tos/..., jwlink,
-                   midl and widl (IDL and ODL files, type libraries), *.cfg
+                   midl and widl (IDL and ODL files, type libraries), tlbimport
+                   (#import of type libraries), *.cfg
 lib/clang/         clang's own headers
 i8086-msdos/       DOS and Win16 sysroot: picolibc, builtins, libc++ per memory model
 sysroots/win9x-msvcrt/  mingw-w64 for 95/98/ME/NT 4.0 (msvcrt.dll), with libunicows
