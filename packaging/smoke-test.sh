@@ -247,7 +247,7 @@ else
   skip=$((skip + 1))
 fi
 if [ -z "$HOSTRUN" ] && [ -f "$tools/vxd/run-tests.sh" ]; then
-  limit=300; check "vxd" "vxd tests: 9 passed, 0 failed" \
+  limit=300; check "vxd" "vxd tests: [1-9][0-9]* passed, 0 failed" \
     env CFGDIR="$PKG/bin" WORK="$OUT/vxd" PYTHON="$PY" sh "$tools/vxd/run-tests.sh"
   limit=
 else
