@@ -489,12 +489,14 @@ LLVM_SRC=~/llvm PREFIX=$PWD/llvm-linux sh packaging/build-llvm.sh linux
 LLVM_SRC=~/llvm PREFIX=$PWD/llvm-windows sh packaging/build-llvm.sh windows
 JWLINK_SRC=~/jwlink sh packaging/build-jwlink.sh linux bin/jwlink
 JWLINK_SRC=~/jwlink sh packaging/build-jwlink.sh windows bin/jwlink.exe
+MINGW_SRC=~/mingw-w64 WIN32_SDK=~/win32-sdk sh packaging/build-widl.sh linux widl-linux
+MINGW_SRC=~/mingw-w64 WIN32_SDK=~/win32-sdk sh packaging/build-widl.sh windows widl-windows
 BIN=$PWD/llvm-linux/bin LLVM_SRC=~/llvm PICOLIBC_SRC=~/picolibc \
   WIN16_SDK=~/win16-sdk WIN32_SDK=~/win32-sdk \
   MINGW_SRC=~/mingw-w64 LIBUNICOWS_SRC=~/libunicows-1.1.2 \
   sh packaging/build-sysroot.sh i8086-msdos sysroots/i8086-msdos   # and so on
 LLVM_PREFIX=$PWD/llvm-linux JWLINK=bin/jwlink SYSROOTS=$PWD/sysroots \
-  LLVM_SRC=~/llvm PICOLIBC_SRC=~/picolibc JWLINK_SRC=~/jwlink \
+  WIDL_DIR=$PWD/widl-linux LLVM_SRC=~/llvm PICOLIBC_SRC=~/picolibc JWLINK_SRC=~/jwlink \
   WIN16_SDK=~/win16-sdk WIN32_SDK=~/win32-sdk \
   sh packaging/assemble.sh linux clang-dos-linux-x86_64
 ```

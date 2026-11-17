@@ -256,6 +256,32 @@ jobs:
           if-no-files-found: error
           name: jwlink
           path: out/
+      # widl, Wine's IDL compiler, from mingw-w64, and win32-sdk's midl.
+      - uses: actions/checkout@v4
+        with:
+          repository: clang-dos/win32-sdk
+          ref: ${{ steps.refs.outputs.win32 }}
+          path: win32-sdk
+          persist-credentials: false
+      - name: Get mingw-w64
+        run: |
+          git init -q mingw-w64
+          git -C mingw-w64 fetch -q --depth 1 "$MINGW_REPO" "$MINGW_SHA"
+          git -C mingw-w64 checkout -q FETCH_HEAD
+      - name: Build widl and midl
+        run: |
+          for h in linux windows; do
+            MINGW_SRC=$PWD/mingw-w64 WIN32_SDK=$PWD/win32-sdk WORK=$PWD/work-widl-$h \
+              sh sdk/packaging/build-widl.sh $h widl/$h
+          done
+          file widl/*/*
+          test -x widl/linux/widl && test -x widl/linux/midl
+          test -f widl/windows/widl.exe && test -f widl/windows/midl.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: widl
+          path: widl/
 
   llvm-linux:
     name: LLVM (Linux host)
@@ -539,6 +565,10 @@ jobs:
           path: jwlink-bin
       - uses: actions/download-artifact@v4
         with:
+          name: widl
+          path: widl-bin
+      - uses: actions/download-artifact@v4
+        with:
           name: branches
       - name: Assemble
         run: |
@@ -550,7 +580,9 @@ jobs:
           done
           case ${{ matrix.host }} in linux) jw=jwlink-bin/jwlink ;; windows) jw=jwlink-bin/jwlink.exe ;; esac
           name=clang-dos-${{ matrix.host }}-x86_64
+          chmod +x widl-bin/*/widl* widl-bin/*/midl*
           LLVM_PREFIX=$PWD/llvm-install JWLINK=$PWD/$jw SYSROOTS=$PWD/sysroots \
+          WIDL_DIR=$PWD/widl-bin/${{ matrix.host }} \
           LLVM_SRC=$PWD/llvm PICOLIBC_SRC=$PWD/picolibc JWLINK_SRC=$PWD/jwlink \
           WIN16_SDK=$PWD/win16-sdk WIN32_SDK=$PWD/win32-sdk AMIGA_SDK=$PWD/amiga-sdk ATARI_SDK=$PWD/atari-sdk \
           UNIX_SDK=$PWD/unix-sdk BRANCHES=$PWD/BRANCHES.txt \
