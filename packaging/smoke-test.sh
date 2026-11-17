@@ -163,6 +163,22 @@ for v in win32s nt31 nt35 nt351 nt4 win95 win95-crtdll win98 winme win2000 winxp
     { check "check-imports $v-threads" "" $PY "$tools/check-imports.py" $chk "$v-threads.exe"; runwin "$v-threads" "threads total 10000 OK" "$v-threads.exe"; }
 done
 
+echo "== Type libraries (midl and widl)"
+if [ -n "$HOSTRUN" ]; then MIDL="$HOSTRUN $PKG/bin/midl.exe"; else MIDL="$PKG/bin/midl"; fi
+if [ -x "$PKG/bin/midl" ] || [ -f "$PKG/bin/midl.exe" ]; then
+  # An MFC-style ODL file, compiled as MKTYPLIB would, then used from C.
+  if $MIDL /nologo /mktyplib203 /win32 /tlb smoke.tlb /h smoke.h /iid smoke_i.c smoke.odl >midl.log 2>&1 &&
+    [ -s smoke.tlb ] && [ -s smoke.h ]; then
+    ok "midl smoke.odl"
+    build "typelib" typelib.exe $CC --config=winxp.cfg -O2 typelib.c smoke_i.c -loleaut32 -luuid &&
+      runwin "typelib" "typelib SmokeLib: 2 types, ISmoke 2 functions 2 properties" typelib.exe
+  else
+    bad "midl smoke.odl" midl.log
+  fi
+else
+  bad "midl is in the package" /dev/null
+fi
+
 echo "== 32-bit Windows with picolibc (no C runtime DLL)"
 # nocrt NAME FILE: the program imports no C runtime DLL
 nocrt() {

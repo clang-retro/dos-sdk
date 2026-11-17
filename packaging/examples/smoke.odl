@@ -1,0 +1,23 @@
+// An MFC-style type library source (MKTYPLIB's ODL), for midl's smoke test.
+[uuid(5f0e1a20-7b3c-4d2e-9a81-3c6d5e4f7a01), version(1.0), helpstring("Smoke type library")]
+library SmokeLib
+{
+    importlib("stdole32.tlb");
+
+    [uuid(5f0e1a21-7b3c-4d2e-9a81-3c6d5e4f7a01)]
+    dispinterface ISmoke
+    {
+    properties:
+        [id(1)] long Count;
+        [id(2)] BSTR Name;
+    methods:
+        [id(3)] long Add(long n);
+        [id(4)] VARIANT Pick(VARIANT v, IDispatch* pDisp);
+    };
+
+    [uuid(5f0e1a22-7b3c-4d2e-9a81-3c6d5e4f7a01)]
+    coclass Smoke
+    {
+        [default] dispinterface ISmoke;
+    };
+};

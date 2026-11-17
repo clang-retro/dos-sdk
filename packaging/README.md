@@ -317,7 +317,8 @@ qemu-irix; none has run on real DOS, Windows 1.x-3.x, Win32s, NT 3.x, 9x,
 ## Contents
 
 ```
-bin/               clang, clang++, lld, llvm-ar/nm/objdump/rc/dlltool/elf2hunk/elf2tos/..., jwlink, *.cfg
+bin/               clang, clang++, lld, llvm-ar/nm/objdump/rc/dlltool/elf2hunk/elf2tos/..., jwlink,
+                   midl and widl (IDL and ODL files, type libraries), *.cfg
 lib/clang/         clang's own headers
 i8086-msdos/       DOS and Win16 sysroot: picolibc, builtins, libc++ per memory model
 sysroots/win9x-msvcrt/  mingw-w64 for 95/98/ME/NT 4.0 (msvcrt.dll), with libunicows
@@ -334,6 +335,6 @@ share/clang-dos/   ne-check.py, check-imports.py, win16-imports.py, build-modern
                    amiga-ndk.py (with lha.py, fd2stub.py), amiga-examples/,
                    hatari-run.sh, atari-examples/, build-qemu-irix.sh,
                    import-irix.sh, irix-examples/, solaris-examples/, docs/
-examples/          hello.c, hello.cpp, except.cpp, threads.cpp, curses.c
+examples/          hello.c, hello.cpp, except.cpp, threads.cpp, curses.c, smoke.odl
 BRANCHES.txt       the source branches and commits this was built from
 ```
