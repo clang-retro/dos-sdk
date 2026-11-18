@@ -88,10 +88,12 @@ done
 cp "$WIN16_SDK/tools/ne-check.py" "$WIN16_SDK/tools/win16-imports.py" \
   "$WIN32_SDK/tools/check-imports.py" "$WIN32_SDK/tools/msvcrt-versions.txt" \
   "$WIN32_SDK/scripts/build-modern-sysroot.sh" "$out/share/clang-dos/"
-# Kernel-mode drivers (win32-sdk's *-ddk.cfg) and VxDs: the checkers' data,
-# the source of libntseh.a (_except_handler3) for build-modern-sysroot.sh,
-# the signing tool, the linker for VxDs and the test driver and VxD.
+# Kernel-mode drivers (win32-sdk's *-ddk.cfg), SCSI miniports and VxDs: the
+# checkers' data, the source of libntseh.a (_except_handler3) for
+# build-modern-sysroot.sh, the signing tool, the linker for VxDs and the test
+# driver and VxD.
 for f in tools/kernel-versions.txt tools/wdm9x-exports.txt \
+    tools/scsiport9x-exports.txt \
     scripts/fix-ddk-headers.sh kernel/except3.S tools/drvsign.py \
     tools/vxd-link.py tools/vxd-check.py; do
   if [ -f "$WIN32_SDK/$f" ]; then cp "$WIN32_SDK/$f" "$out/share/clang-dos/"; fi
