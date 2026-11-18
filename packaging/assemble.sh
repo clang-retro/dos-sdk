@@ -99,6 +99,9 @@ for f in tools/kernel-versions.txt tools/wdm9x-exports.txt \
   if [ -f "$WIN32_SDK/$f" ]; then cp "$WIN32_SDK/$f" "$out/share/clang-dos/"; fi
 done
 if [ -d "$WIN32_SDK/tests/ddk" ]; then cp -R "$WIN32_SDK/tests/ddk" "$out/share/clang-dos/ddk"; fi
+# The DDK headers mingw-w64 lacks (hidport.h, 1394.h ...), which
+# fix-ddk-headers.sh copies into a sysroot from ddk-include next to it.
+if [ -d "$WIN32_SDK/kernel/include" ]; then cp -R "$WIN32_SDK/kernel/include" "$out/share/clang-dos/ddk-include"; fi
 if [ -d "$WIN32_SDK/vxd" ]; then cp -R "$WIN32_SDK/vxd" "$out/share/clang-dos/vxd"; fi
 # Makes sysroots from the user's own copies of Microsoft's SDKs and DDKs.
 if [ -f "$WIN32_SDK/tools/import-ms-sdk.py" ]; then
