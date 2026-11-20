@@ -166,7 +166,7 @@ jobs:
             echo
             echo "- \`clang-dos-linux-x86_64.tar.xz\`: Linux x86_64 host (Ubuntu 24.04, Debian 13, Fedora 39 or newer)"
             echo "- \`clang-dos-windows-x86_64.zip\` or \`.7z\` (same contents): Windows 10 or later, x86_64 host"
-            echo "- \`clang-dos-sysroot-NAME.tar.xz\`: each sysroot of the packages alone (i8086-msdos, m68k-amigaos, m68k-atari-tos, mips-sgi-irix, sparc-sun-solaris, i386-pc-solaris and the Windows ones), for \`packaging/get-toolchain.sh -s NAME\`"
+            echo "- \`clang-dos-sysroot-NAME.tar.xz\`: each sysroot of the packages alone (i8086-msdos, m68k-amigaos, m68k-atari-tos, mips-sgi-irix, sparc-sun-solaris, i386-pc-solaris, i386-unknown-freebsd and the Windows ones), for \`packaging/get-toolchain.sh -s NAME\`"
             echo "- \`clang-dos-win16-sdk.tar.xz\`, \`clang-dos-win32-sdk.tar.xz\`: the Windows SDKs alone (headers, import lists, libraries, config files and licences), to unpack over a package; every file in them can be passed on (see NOTICE.md in share/licenses)"
             echo
             echo "Unpack anywhere and see README.md inside for the targets and their \`--config\` files."

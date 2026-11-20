@@ -335,7 +335,7 @@ jobs:
       matrix:
         include:
           - group: dos
-            names: i8086-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix sparc-sun-solaris i386-pc-solaris
+            names: i8086-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix sparc-sun-solaris i386-pc-solaris i386-unknown-freebsd
             source: picolibc
             winsdk: win16-sdk
           - group: windows
@@ -513,6 +513,7 @@ jobs:
             libos/tos/README.md
             libos/irix/README.md
             libos/solaris/README.md
+            libos/bsd/README.md
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - uses: actions/checkout@v4
@@ -706,7 +707,8 @@ jobs:
         run: |
           pkg=$PWD/smoke/clang-dos-${{ matrix.host }}-x86_64
           hostrun=; [ ${{ matrix.host }} = windows ] && hostrun=wine
-          HOSTRUN=$hostrun EMU2=$PWD/emu2/emu2 WINE=wine VAMOS=vamos QEMU_IRIX_DIR=$PWD/qemu-irix OUT=$PWD/smoke-out \
+          cc -O2 -o bsdrun unix-sdk/bsd/tools/bsdrun.c
+          HOSTRUN=$hostrun EMU2=$PWD/emu2/emu2 WINE=wine VAMOS=vamos QEMU_IRIX_DIR=$PWD/qemu-irix BSDRUN=$PWD/bsdrun OUT=$PWD/smoke-out \
             xvfb-run -a sh "$pkg/smoke-test.sh" 2>&1 | tee smoke.log
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -56,6 +56,7 @@ triple, the sysroot and the linker. Pass it with `--config=NAME.cfg`:
 | SGI IRIX 6.x, 64-bit | `irix64.cfg` | `mips64-sgi-irix6.5 -mabi=64` | ELF, static, picolibc |
 | Solaris 2.5 to 11.4, SPARC | `solaris.cfg` | `sparc-sun-solaris -mcpu=v8` | ELF, static, picolibc |
 | Solaris 2.5 to 11.4, x86 | `solarisx86.cfg` | `i386-pc-solaris -march=i486` | ELF, static, picolibc |
+| FreeBSD 3.0 and later, x86 | `freebsd.cfg` | `i386-unknown-freebsd -march=i486` | ELF, static, picolibc |
 
 The DOS and Win16 targets need no config file: `--target=i8086-pc-msdos`
 (or `i8086-pc-win16...`) is enough, since clang finds the sysroot in
@@ -299,13 +300,32 @@ clang --config=solarisx86.cfg -march=pentium4 -O2 hello.c -o hello  # Pentium 4 
   builds too, run V8 and x86 programs on Linux with no Solaris system;
   programs are tested there. Details are in `share/clang-dos/docs/solaris-README.md`.
 
+## FreeBSD
+
+```sh
+clang --config=freebsd.cfg -O2 hello.c -o hello                  # i486 and later
+clang --config=freebsd.cfg -march=pentium4 -O2 hello.c -o hello  # Pentium 4 and later
+```
+
+- The sysroot is `i386-unknown-freebsd/`, laid out as clang's FreeBSD
+  driver expects (`usr/include`, `usr/lib`), with picolibc and its BSD
+  layer and compiler-rt's builtins (as `libgcc.a`, as on FreeBSD).
+  Nothing in it comes from FreeBSD. Programs are static: the config file
+  passes `-static`, and `--sysroot`.
+- `ld.lld` links ordinary static FreeBSD ELF executables, which run on
+  FreeBSD 3.0 and later.
+- `share/clang-dos/bsdrun.c` builds (with a Linux `cc`) a tool that runs
+  them on x86 Linux with no FreeBSD system, by translating their system
+  calls; programs are tested there. Details are in
+  `share/clang-dos/docs/bsd-README.md`.
+
 ## Checking the package
 
 `smoke-test.sh` builds `examples/` for every target above and checks the
 results with `ne-check.py` and `check-imports.py`. With
 [emu2](https://github.com/dmsc/emu2), Wine and vamos (`pip install amitools
 machine68k==0.3.0`) on `PATH` (or `EMU2=`, `WINE=` and `VAMOS=`), and
-Hatari with `EMUTOS_DIR` set, and qemu-irix (with qemu-solaris and qemu-solarisx86) in `QEMU_IRIX_DIR`, it runs
+Hatari with `EMUTOS_DIR` set, and qemu-irix (with qemu-solaris and qemu-solarisx86) in `QEMU_IRIX_DIR`, and bsdrun in `BSDRUN`, it runs
 them too:
 
 ```sh
@@ -313,9 +333,10 @@ sh smoke-test.sh                          # Linux package
 HOSTRUN=wine sh smoke-test.sh             # Windows package, from Linux with Wine
 ```
 
-Every program is tested only in emu2, Wine, Amiga emulators, Hatari and
-qemu-irix; none has run on real DOS, Windows 1.x-3.x, Win32s, NT 3.x, 9x,
-2000, XP, later Windows, Amiga, Atari, SGI or Sun machines yet.
+Every program is tested only in emu2, Wine, Amiga emulators, Hatari,
+qemu-irix and bsdrun; none has run on real DOS, Windows 1.x-3.x, Win32s,
+NT 3.x, 9x, 2000, XP, later Windows, Amiga, Atari, SGI, Sun or FreeBSD
+machines yet.
 
 ## Contents
 
@@ -336,10 +357,12 @@ m68k-atari-tos/    Atari TOS sysroot: picolibc, builtins, TOS/GEM headers, libge
 mips-sgi-irix/     SGI IRIX sysroot: picolibc and builtins for o32, n32 and 64
 sparc-sun-solaris/ Solaris sysroot: picolibc and builtins for 32-bit SPARC (V8)
 i386-pc-solaris/   Solaris sysroot: picolibc and builtins for 32-bit x86 (i486)
+i386-unknown-freebsd/ FreeBSD sysroot: picolibc and builtins for 32-bit x86 (i486)
 share/clang-dos/   ne-check.py, check-imports.py, win16-imports.py, build-modern-sysroot.sh,
                    amiga-ndk.py (with lha.py, fd2stub.py), amiga-examples/,
                    hatari-run.sh, atari-examples/, build-qemu-irix.sh,
-                   import-irix.sh, irix-examples/, solaris-examples/, docs/
+                   import-irix.sh, irix-examples/, solaris-examples/,
+                   bsdrun.c, bsd-examples/, docs/
 examples/          hello.c, hello.cpp, except.cpp, threads.cpp, curses.c, smoke.odl
 BRANCHES.txt       the source branches and commits this was built from
 ```

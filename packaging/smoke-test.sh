@@ -11,6 +11,7 @@
 #   EMUTOS_DIR=dir (with hatari on PATH)
 #   QEMU_IRIX_DIR=dir (qemu-irix, qemu-irixn32, qemu-irix64, qemu-solaris,
 #   qemu-solarisx86)
+#   BSDRUN=bsdrun (unix-sdk's, for FreeBSD programs; x86 Linux only)
 #                                    runners for the outputs (optional)
 #   OUT=dir                          where to build (default: ./smoke-out)
 set -u
@@ -270,6 +271,22 @@ if [ -d "$PKG/i386-pc-solaris" ]; then
     runirix "solaris-x86" "Hello, world from smoke! 42 123456789 3.25" qemu-solarisx86 "solaris-x86"
   build "solaris-p4" "solaris-p4" $CC --config=solarisx86.cfg -march=pentium4 -O2 hello.c &&
     runirix "solaris-p4" "Hello, world from smoke! 42 123456789 3.25" qemu-solarisx86 "solaris-p4"
+fi
+
+if [ -d "$PKG/i386-unknown-freebsd" ]; then
+  echo "== FreeBSD (i386-unknown-freebsd)"
+  # bsdrun runs static i386 FreeBSD programs on Linux.
+  for c in i486: p4:-march=pentium4; do
+    n=freebsd-${c%%:*}
+    build "$n" "$n" $CC --config=freebsd.cfg ${c#*:} -O2 hello.c &&
+      if [ -n "${BSDRUN:-}" ]; then
+        # A Windows-hosted linker (under Wine) leaves off the mode bits.
+        chmod +x "$n"
+        check "run $n" "Hello, world from smoke! 42 123456789 3.25" "$BSDRUN" "./$n" smoke
+      else
+        skip=$((skip + 1))
+      fi
+  done
 fi
 
 echo "== Windows kernel-mode drivers and VxDs"
