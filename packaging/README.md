@@ -57,6 +57,7 @@ triple, the sysroot and the linker. Pass it with `--config=NAME.cfg`:
 | Solaris 2.5 to 11.4, SPARC | `solaris.cfg` | `sparc-sun-solaris -mcpu=v8` | ELF, static, picolibc |
 | Solaris 2.5 to 11.4, x86 | `solarisx86.cfg` | `i386-pc-solaris -march=i486` | ELF, static, picolibc |
 | FreeBSD 3.0 and later, x86 | `freebsd.cfg` | `i386-unknown-freebsd -march=i486` | ELF, static, picolibc |
+| NetBSD 1.5 and later, x86 | `netbsd.cfg` | `i386-unknown-netbsd -march=i486` | ELF, static, picolibc |
 
 The DOS and Win16 targets need no config file: `--target=i8086-pc-msdos`
 (or `i8086-pc-win16...`) is enough, since clang finds the sysroot in
@@ -319,6 +320,22 @@ clang --config=freebsd.cfg -march=pentium4 -O2 hello.c -o hello  # Pentium 4 and
   calls; programs are tested there. Details are in
   `share/clang-dos/docs/bsd-README.md`.
 
+## NetBSD
+
+```sh
+clang --config=netbsd.cfg -O2 hello.c -o hello                  # i486 and later
+clang --config=netbsd.cfg -march=pentium4 -O2 hello.c -o hello  # Pentium 4 and later
+```
+
+- The sysroot is `i386-unknown-netbsd/`, laid out as clang's NetBSD
+  driver expects (`usr/include`, `usr/lib`), with picolibc and its BSD
+  layer, and compiler-rt's builtins merged into `libc.a` (clang links no
+  runtime library for NetBSD on x86). Nothing in it comes from NetBSD.
+  The config file passes `-static`, `--sysroot` and `-fuse-ld=lld`.
+- `ld.lld` links static ELF executables carrying the NetBSD note, which
+  run on NetBSD 1.5 and later.
+- bsdrun (above) runs them on x86 Linux too.
+
 ## Checking the package
 
 `smoke-test.sh` builds `examples/` for every target above and checks the
@@ -335,7 +352,7 @@ HOSTRUN=wine sh smoke-test.sh             # Windows package, from Linux with Win
 
 Every program is tested only in emu2, Wine, Amiga emulators, Hatari,
 qemu-irix and bsdrun; none has run on real DOS, Windows 1.x-3.x, Win32s,
-NT 3.x, 9x, 2000, XP, later Windows, Amiga, Atari, SGI, Sun or FreeBSD
+NT 3.x, 9x, 2000, XP, later Windows, Amiga, Atari, SGI, Sun, FreeBSD or NetBSD
 machines yet.
 
 ## Contents
@@ -358,6 +375,7 @@ mips-sgi-irix/     SGI IRIX sysroot: picolibc and builtins for o32, n32 and 64
 sparc-sun-solaris/ Solaris sysroot: picolibc and builtins for 32-bit SPARC (V8)
 i386-pc-solaris/   Solaris sysroot: picolibc and builtins for 32-bit x86 (i486)
 i386-unknown-freebsd/ FreeBSD sysroot: picolibc and builtins for 32-bit x86 (i486)
+i386-unknown-netbsd/  NetBSD sysroot: the same, for NetBSD
 share/clang-dos/   ne-check.py, check-imports.py, win16-imports.py, build-modern-sysroot.sh,
                    amiga-ndk.py (with lha.py, fd2stub.py), amiga-examples/,
                    hatari-run.sh, atari-examples/, build-qemu-irix.sh,

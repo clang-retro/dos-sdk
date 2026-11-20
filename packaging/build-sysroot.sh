@@ -18,6 +18,7 @@
 #                   sparc-sun-solaris  Solaris 2.5 to 11.4, 32-bit SPARC
 #                   i386-pc-solaris    Solaris 2.5 to 11.4, 32-bit x86
 #                   i386-unknown-freebsd  FreeBSD 3.0 and later, 32-bit x86
+#                   i386-unknown-netbsd   NetBSD 1.5 and later, 32-bit x86
 #   OUTPUT          the sysroot directory
 #   BIN             directory with clang, llvm-ar and so on (and jwlink)
 #   LLVM_SRC        clang-dos/llvm checkout
@@ -98,6 +99,12 @@ i386-unknown-freebsd)
   : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${UNIX_SDK:?set UNIX_SDK}"
   export PICOLIBC_SRC
   sh "$UNIX_SDK/bsd/build-sysroot.sh" "$SYSROOT"
+  ;;
+i386-unknown-netbsd)
+  # The same for NetBSD. Nothing from NetBSD is in it.
+  : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${UNIX_SDK:?set UNIX_SDK}"
+  export PICOLIBC_SRC
+  BSD=netbsd sh "$UNIX_SDK/bsd/build-sysroot.sh" "$SYSROOT"
   ;;
 *)
   echo "unknown sysroot $name" >&2; exit 1 ;;
