@@ -79,6 +79,10 @@ irix=
 if [ -n "${UNIX_SDK:-}" ] && [ -d "$SYSROOTS/mips-sgi-irix" ]; then irix=1; fi
 if [ -n "$irix" ]; then cp -R "$SYSROOTS/mips-sgi-irix" "$out/mips-sgi-irix"; fi
 solaris=
+bsd=
+if [ -n "${UNIX_SDK:-}" ] && [ -d "$SYSROOTS/i386-unknown-freebsd" ]; then
+  bsd=1; cp -R "$SYSROOTS/i386-unknown-freebsd" "$out/i386-unknown-freebsd"
+fi
 if [ -n "${UNIX_SDK:-}" ]; then
   for t in sparc-sun-solaris i386-pc-solaris; do
     if [ -d "$SYSROOTS/$t" ]; then solaris=1; cp -R "$SYSROOTS/$t" "$out/$t"; fi
@@ -147,7 +151,13 @@ cp "$WIN32_SDK/README.md" "$out/share/clang-dos/docs/win32-README.md"
 cp "$AMIGA_SDK/README.md" "$out/share/clang-dos/docs/amiga-README.md"
 cp "$ATARI_SDK/README.md" "$out/share/clang-dos/docs/atari-README.md"
 cp "$sdk/docs/memory-models.md" "$out/share/clang-dos/docs/"
-for os in msdos amigaos tos irix solaris; do
+if [ -n "$bsd" ]; then
+  mkdir -p "$out/share/clang-dos/bsd-examples"
+  cp "$UNIX_SDK"/bsd/examples/*.c "$out/share/clang-dos/bsd-examples/"
+  cp "$UNIX_SDK/bsd/tools/bsdrun.c" "$out/share/clang-dos/"
+  cp "$UNIX_SDK/bsd/README.md" "$out/share/clang-dos/docs/bsd-README.md"
+fi
+for os in msdos amigaos tos irix solaris bsd; do
   if [ -f "$PICOLIBC_SRC/libos/$os/README.md" ]; then
     cp "$PICOLIBC_SRC/libos/$os/README.md" \
       "$out/share/clang-dos/docs/picolibc-$os-README.md"
@@ -169,7 +179,7 @@ for s in win16-sdk:$WIN16_SDK win32-sdk:$WIN32_SDK; do
   if [ -f "$d/NOTICE.md" ]; then cp "$d/NOTICE.md" "$out/share/licenses/$n/"; fi
 done
 cp "$ATARI_SDK/LICENSE" "$out/share/licenses/atari-sdk-LICENSE"
-if [ -n "$irix$solaris" ]; then cp "$UNIX_SDK/LICENSE" "$out/share/licenses/unix-sdk-LICENSE"; fi
+if [ -n "$irix$solaris$bsd" ]; then cp "$UNIX_SDK/LICENSE" "$out/share/licenses/unix-sdk-LICENSE"; fi
 cp "$LLVM_SRC/llvm/LICENSE.TXT" "$out/share/licenses/LLVM-LICENSE.TXT"
 cp "$PICOLIBC_SRC/COPYING.picolibc" "$out/share/licenses/" 2>/dev/null || true
 cp "$JWLINK_SRC/Ver/license.txt" "$out/share/licenses/JWlink-OWPL.txt" 2>/dev/null || true

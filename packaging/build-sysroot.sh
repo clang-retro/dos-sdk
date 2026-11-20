@@ -17,6 +17,7 @@
 #                                   the o32, n32 and 64 ABIs
 #                   sparc-sun-solaris  Solaris 2.5 to 11.4, 32-bit SPARC
 #                   i386-pc-solaris    Solaris 2.5 to 11.4, 32-bit x86
+#                   i386-unknown-freebsd  FreeBSD 3.0 and later, 32-bit x86
 #   OUTPUT          the sysroot directory
 #   BIN             directory with clang, llvm-ar and so on (and jwlink)
 #   LLVM_SRC        clang-dos/llvm checkout
@@ -25,7 +26,8 @@
 #                   win32-picolibc)
 #   AMIGA_SDK       clang-dos/amiga-sdk checkout (m68k-amigaos)
 #   ATARI_SDK       clang-dos/atari-sdk checkout (m68k-atari-tos)
-#   UNIX_SDK        clang-retro/unix-sdk checkout (mips-sgi-irix, Solaris)
+#   UNIX_SDK        clang-retro/unix-sdk checkout (mips-sgi-irix, Solaris,
+#                   FreeBSD)
 #   TVISION_SRC     magiblot/tvision checkout (i8086-msdos, optional; see
 #                   tvision/README.md for the commit)
 #   WIN16_SDK       clang-dos/win16-sdk checkout (i8086-msdos: Windows 1.x-3.x)
@@ -89,6 +91,13 @@ i386-pc-solaris)
   : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${UNIX_SDK:?set UNIX_SDK}"
   export PICOLIBC_SRC
   ARCH=i386 sh "$UNIX_SDK/solaris/build-sysroot.sh" "$SYSROOT"
+  ;;
+i386-unknown-freebsd)
+  # picolibc with its BSD layer and the builtins, for the i486, from
+  # unix-sdk. Nothing from FreeBSD is in it.
+  : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${UNIX_SDK:?set UNIX_SDK}"
+  export PICOLIBC_SRC
+  sh "$UNIX_SDK/bsd/build-sysroot.sh" "$SYSROOT"
   ;;
 *)
   echo "unknown sysroot $name" >&2; exit 1 ;;
