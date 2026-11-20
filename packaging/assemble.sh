@@ -80,9 +80,11 @@ if [ -n "${UNIX_SDK:-}" ] && [ -d "$SYSROOTS/mips-sgi-irix" ]; then irix=1; fi
 if [ -n "$irix" ]; then cp -R "$SYSROOTS/mips-sgi-irix" "$out/mips-sgi-irix"; fi
 solaris=
 bsd=
-if [ -n "${UNIX_SDK:-}" ] && [ -d "$SYSROOTS/i386-unknown-freebsd" ]; then
-  bsd=1; cp -R "$SYSROOTS/i386-unknown-freebsd" "$out/i386-unknown-freebsd"
-fi
+for b in freebsd netbsd; do
+  if [ -n "${UNIX_SDK:-}" ] && [ -d "$SYSROOTS/i386-unknown-$b" ]; then
+    bsd=1; cp -R "$SYSROOTS/i386-unknown-$b" "$out/i386-unknown-$b"
+  fi
+done
 if [ -n "${UNIX_SDK:-}" ]; then
   for t in sparc-sun-solaris i386-pc-solaris; do
     if [ -d "$SYSROOTS/$t" ]; then solaris=1; cp -R "$SYSROOTS/$t" "$out/$t"; fi

@@ -11,7 +11,7 @@
 #   EMUTOS_DIR=dir (with hatari on PATH)
 #   QEMU_IRIX_DIR=dir (qemu-irix, qemu-irixn32, qemu-irix64, qemu-solaris,
 #   qemu-solarisx86)
-#   BSDRUN=bsdrun (unix-sdk's, for FreeBSD programs; x86 Linux only)
+#   BSDRUN=bsdrun (unix-sdk's, for FreeBSD and NetBSD programs; x86 Linux only)
 #                                    runners for the outputs (optional)
 #   OUT=dir                          where to build (default: ./smoke-out)
 set -u
@@ -273,12 +273,14 @@ if [ -d "$PKG/i386-pc-solaris" ]; then
     runirix "solaris-p4" "Hello, world from smoke! 42 123456789 3.25" qemu-solarisx86 "solaris-p4"
 fi
 
-if [ -d "$PKG/i386-unknown-freebsd" ]; then
-  echo "== FreeBSD (i386-unknown-freebsd)"
-  # bsdrun runs static i386 FreeBSD programs on Linux.
+for b in freebsd:FreeBSD netbsd:NetBSD; do
+  os=${b%%:*}
+  [ -d "$PKG/i386-unknown-$os" ] || continue
+  echo "== ${b#*:} (i386-unknown-$os)"
+  # bsdrun runs static i386 FreeBSD and NetBSD programs on Linux.
   for c in i486: p4:-march=pentium4; do
-    n=freebsd-${c%%:*}
-    build "$n" "$n" $CC --config=freebsd.cfg ${c#*:} -O2 hello.c &&
+    n=$os-${c%%:*}
+    build "$n" "$n" $CC --config=$os.cfg ${c#*:} -O2 hello.c &&
       if [ -n "${BSDRUN:-}" ]; then
         # A Windows-hosted linker (under Wine) leaves off the mode bits.
         chmod +x "$n"
@@ -287,7 +289,7 @@ if [ -d "$PKG/i386-unknown-freebsd" ]; then
         skip=$((skip + 1))
       fi
   done
-fi
+done
 
 echo "== Windows kernel-mode drivers and VxDs"
 # The test driver with every *-ddk.cfg, checked and (in a 32-bit and the
