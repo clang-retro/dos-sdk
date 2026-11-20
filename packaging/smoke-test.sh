@@ -9,7 +9,8 @@
 #   HOSTRUN=wine sh smoke-test.sh    test a Windows-hosted package under Wine
 #   EMU2=/path/to/emu2 WINE=wine VAMOS=vamos
 #   EMUTOS_DIR=dir (with hatari on PATH)
-#   QEMU_IRIX_DIR=dir (qemu-irix, qemu-irixn32, qemu-irix64, qemu-solaris)
+#   QEMU_IRIX_DIR=dir (qemu-irix, qemu-irixn32, qemu-irix64, qemu-solaris,
+#   qemu-solarisx86)
 #                                    runners for the outputs (optional)
 #   OUT=dir                          where to build (default: ./smoke-out)
 set -u
@@ -260,6 +261,15 @@ if [ -d "$PKG/sparc-sun-solaris" ]; then
   build "solaris-v8" "solaris-v8" $CC --config=solaris.cfg -O2 hello.c &&
     runirix "solaris-v8" "Hello, world from smoke! 42 123456789 3.25" qemu-solaris "solaris-v8"
   build "solaris-v8plus" "solaris-v8plus" $CC --config=solaris.cfg -mcpu=v9 -O2 hello.c
+fi
+
+if [ -d "$PKG/i386-pc-solaris" ]; then
+  echo "== Solaris (i386-pc-solaris)"
+  # qemu-solarisx86, built with qemu-irix, runs them.
+  build "solaris-x86" "solaris-x86" $CC --config=solarisx86.cfg -O2 hello.c &&
+    runirix "solaris-x86" "Hello, world from smoke! 42 123456789 3.25" qemu-solarisx86 "solaris-x86"
+  build "solaris-p4" "solaris-p4" $CC --config=solarisx86.cfg -march=pentium4 -O2 hello.c &&
+    runirix "solaris-p4" "Hello, world from smoke! 42 123456789 3.25" qemu-solarisx86 "solaris-p4"
 fi
 
 echo "== Windows kernel-mode drivers and VxDs"
