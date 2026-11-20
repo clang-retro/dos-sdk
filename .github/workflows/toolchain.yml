@@ -335,7 +335,7 @@ jobs:
       matrix:
         include:
           - group: dos
-            names: i8086-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix sparc-sun-solaris
+            names: i8086-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix sparc-sun-solaris i386-pc-solaris
             source: picolibc
             winsdk: win16-sdk
           - group: windows

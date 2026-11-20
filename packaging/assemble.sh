@@ -79,8 +79,11 @@ irix=
 if [ -n "${UNIX_SDK:-}" ] && [ -d "$SYSROOTS/mips-sgi-irix" ]; then irix=1; fi
 if [ -n "$irix" ]; then cp -R "$SYSROOTS/mips-sgi-irix" "$out/mips-sgi-irix"; fi
 solaris=
-if [ -n "${UNIX_SDK:-}" ] && [ -d "$SYSROOTS/sparc-sun-solaris" ]; then solaris=1; fi
-if [ -n "$solaris" ]; then cp -R "$SYSROOTS/sparc-sun-solaris" "$out/sparc-sun-solaris"; fi
+if [ -n "${UNIX_SDK:-}" ]; then
+  for t in sparc-sun-solaris i386-pc-solaris; do
+    if [ -d "$SYSROOTS/$t" ]; then solaris=1; cp -R "$SYSROOTS/$t" "$out/$t"; fi
+  done
+fi
 for s in win9x-msvcrt win9x-crtdll win2k-xp win32-picolibc win-vista win-vista-x64; do
   cp -R "$SYSROOTS/$s" "$out/sysroots/"
 done

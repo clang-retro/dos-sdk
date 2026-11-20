@@ -55,6 +55,7 @@ triple, the sysroot and the linker. Pass it with `--config=NAME.cfg`:
 | SGI IRIX 6.x, n32 | `irixn32.cfg` | `mips64-sgi-irix6.5 -mabi=n32` | ELF, static, picolibc |
 | SGI IRIX 6.x, 64-bit | `irix64.cfg` | `mips64-sgi-irix6.5 -mabi=64` | ELF, static, picolibc |
 | Solaris 2.5 to 11.4, SPARC | `solaris.cfg` | `sparc-sun-solaris -mcpu=v8` | ELF, static, picolibc |
+| Solaris 2.5 to 11.4, x86 | `solarisx86.cfg` | `i386-pc-solaris -march=i486` | ELF, static, picolibc |
 
 The DOS and Win16 targets need no config file: `--target=i8086-pc-msdos`
 (or `i8086-pc-win16...`) is enough, since clang finds the sysroot in
@@ -283,18 +284,20 @@ clang --config=irix.cfg -O2 hello.c -o hello        # o32, MIPS II: IRIX 5.3 and
 ```sh
 clang --config=solaris.cfg -O2 hello.c -o hello            # SPARC V8: every SPARC machine
 clang --config=solaris.cfg -mcpu=v9 -O2 hello.c -o hello   # V8+: UltraSPARC and later
+clang --config=solarisx86.cfg -O2 hello.c -o hello         # x86: i486 and later
+clang --config=solarisx86.cfg -march=pentium4 -O2 hello.c -o hello  # Pentium 4 and later
 ```
 
-- The sysroot is `sparc-sun-solaris/`, laid out like a Solaris system
+- The sysroots are `sparc-sun-solaris/` and `i386-pc-solaris/`, laid out like a Solaris system
   (`usr/include`, `usr/lib`), with picolibc and its Solaris layer (startup
   code, files, `stat`, `malloc`, time, errors, `long double`) and the
   compiler-rt builtins. Nothing in it comes from Solaris, so it is all
   redistributable. Programs are static: the config file passes `-static`.
 - `ld.lld` links ordinary 32-bit Solaris ELF executables (entry `_start`,
-  text at 0x10000), which run on Solaris 2.5 to 11.4.
-- qemu-solaris, which `share/clang-dos/build-qemu-irix.sh` builds too,
-  runs V8 programs on Linux with no Solaris system; programs are tested
-  there. Details are in `share/clang-dos/docs/solaris-README.md`.
+  text at 0x10000 on SPARC), which run on Solaris 2.5 to 11.4.
+- qemu-solaris and qemu-solarisx86, which `share/clang-dos/build-qemu-irix.sh`
+  builds too, run V8 and x86 programs on Linux with no Solaris system;
+  programs are tested there. Details are in `share/clang-dos/docs/solaris-README.md`.
 
 ## Checking the package
 
@@ -302,7 +305,7 @@ clang --config=solaris.cfg -mcpu=v9 -O2 hello.c -o hello   # V8+: UltraSPARC and
 results with `ne-check.py` and `check-imports.py`. With
 [emu2](https://github.com/dmsc/emu2), Wine and vamos (`pip install amitools
 machine68k==0.3.0`) on `PATH` (or `EMU2=`, `WINE=` and `VAMOS=`), and
-Hatari with `EMUTOS_DIR` set, and qemu-irix (with qemu-solaris) in `QEMU_IRIX_DIR`, it runs
+Hatari with `EMUTOS_DIR` set, and qemu-irix (with qemu-solaris and qemu-solarisx86) in `QEMU_IRIX_DIR`, it runs
 them too:
 
 ```sh
@@ -332,6 +335,7 @@ m68k-amigaos/      AmigaOS sysroot: picolibc, builtins, AmigaOS headers, libamig
 m68k-atari-tos/    Atari TOS sysroot: picolibc, builtins, TOS/GEM headers, libgem
 mips-sgi-irix/     SGI IRIX sysroot: picolibc and builtins for o32, n32 and 64
 sparc-sun-solaris/ Solaris sysroot: picolibc and builtins for 32-bit SPARC (V8)
+i386-pc-solaris/   Solaris sysroot: picolibc and builtins for 32-bit x86 (i486)
 share/clang-dos/   ne-check.py, check-imports.py, win16-imports.py, build-modern-sysroot.sh,
                    amiga-ndk.py (with lha.py, fd2stub.py), amiga-examples/,
                    hatari-run.sh, atari-examples/, build-qemu-irix.sh,
