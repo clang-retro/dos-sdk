@@ -280,6 +280,8 @@ if [ -d "$PKG/i386-unknown-freebsd" ]; then
     n=freebsd-${c%%:*}
     build "$n" "$n" $CC --config=freebsd.cfg ${c#*:} -O2 hello.c &&
       if [ -n "${BSDRUN:-}" ]; then
+        # A Windows-hosted linker (under Wine) leaves off the mode bits.
+        chmod +x "$n"
         check "run $n" "Hello, world from smoke! 42 123456789 3.25" "$BSDRUN" "./$n" smoke
       else
         skip=$((skip + 1))
