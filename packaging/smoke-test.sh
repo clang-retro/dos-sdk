@@ -165,6 +165,38 @@ for v in win32s nt31 nt35 nt351 nt4 win95 win95-crtdll win98 winme win2000 winxp
     { check "check-imports $v-threads" "" $PY "$tools/check-imports.py" $chk "$v-threads.exe"; runwin "$v-threads" "threads total 10000 OK" "$v-threads.exe"; }
 done
 
+# The same with libstdc++ (GCC's C++ library), on every 32 and 64-bit
+# Windows, when the package's sysroots have it.
+if ls "$PKG"/sysroots/win2k-xp/lib/gcc/mingw32/*/libstdc++.a >/dev/null 2>&1; then
+  for v in win32s nt31 nt35 nt351 nt4 win95 win95-crtdll win98 winme win2000 winxp \
+      vista win7 win10 win10-x64; do
+    case $v in
+    win32s | nt31) chk="--nt 3.10" ;;
+    nt35) chk="--nt 3.50" ;;
+    nt351) chk="--nt 3.51" ;;
+    win2000) chk="--nt 5.0" ;;
+    winxp) chk="--nt 5.1" ;;
+    *) chk="" ;;
+    esac
+    for p in hello.cpp:"Hello, world from smoke! 42" \
+        except.cpp:"caught boom, 1 destructor ran" \
+        threads.cpp:"threads total 10000 OK"; do
+      src=${p%%:*} want=${p#*:} t=$v-gnu-${src%.cpp}
+      build "$t" "$t.exe" $CXX --config=$v.cfg -stdlib=libstdc++ -O2 "$src" || continue
+      # check-imports.py is for 32-bit Windows before Vista.
+      case $v in
+      vista | win7 | win10 | win10-x64) ;;
+      *) check "check-imports $t" "" $PY "$tools/check-imports.py" $chk "$t.exe" ;;
+      esac
+      runwin "$t" "$want" "$t.exe"
+    done
+  done
+else
+  # Sysroots built without GCC_SRC have no libstdc++.
+  echo "SKIP libstdc++ (not in the Windows sysroots)"
+  skip=$((skip + 1))
+fi
+
 echo "== Type libraries (midl and widl)"
 if [ -n "$HOSTRUN" ]; then MIDL="$HOSTRUN $PKG/bin/midl.exe"; else MIDL="$PKG/bin/midl"; fi
 if [ -x "$PKG/bin/midl" ] || [ -f "$PKG/bin/midl.exe" ]; then

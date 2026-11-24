@@ -35,6 +35,8 @@
 #   WIN32_SDK       clang-dos/win32-sdk checkout (the Windows sysroots, which
 #                   its build-sysroot.sh builds)
 #   MINGW_SRC       mingw-w64 checkout (the Windows sysroots)
+#   GCC_SRC         unpacked GCC release (optional; the Windows sysroots get
+#                   libstdc++ from it, see win32-sdk's docs/libstdcxx.md)
 #   LIBUNICOWS_SRC  unpacked libunicows-1.1.2-src.tar.gz (win9x-msvcrt)
 #   WORK            build directory (default: ./build-sysroot-NAME)
 set -e
