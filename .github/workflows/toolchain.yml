@@ -115,6 +115,10 @@ env:
   MINGW_SHA: 7ce22f6637cc93fd2eb37c8a645908c92bb80bbd
   LIBUNICOWS_URL: https://downloads.sourceforge.net/project/libunicows/libunicows/1.1.2/libunicows-1.1.2-src.tar.gz
   LIBUNICOWS_SHA256: 4371837276fde33b5684556f4c8e37c348b330c2981d99626300c25b4d876a06
+  # GCC, for libstdc++ in the Windows sysroots (win32-sdk's
+  # scripts/build-libstdcxx.sh compiles it with clang).
+  GCC_VERSION: '15.2.0'
+  GCC_SHA256: 438fd996826b0c82485a29da03a72d71d6e3541a83ec702df4271f6fe025d24e
   # Turbo Vision, patched by tvision/clang-dos.patch (see tvision/README.md).
   TVISION_REPO: https://github.com/magiblot/tvision
   TVISION_SHA: b5fc1e50dcc2da062d72f43eb3662894d25aaf30
@@ -389,7 +393,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: sysroot-*.tar
-          key: sysroots-${{ matrix.group }}-${{ needs.setup.outputs.llvm }}-${{ matrix.source == 'picolibc' && format('{0}-{1}-{2}-{3}-{4}', needs.setup.outputs.picolibc, env.TVISION_SHA, needs.setup.outputs.amiga, needs.setup.outputs.atari, needs.setup.outputs.unix) || env.MINGW_SHA }}-${{ matrix.picolibc && needs.setup.outputs.picolibc || 'none' }}-${{ matrix.winsdk == 'win16-sdk' && needs.setup.outputs.win16 || needs.setup.outputs.win32 }}-${{ hashFiles('sdk/scripts/**', 'sdk/runtime/**', 'sdk/graphics/**', 'sdk/tui/**', 'sdk/curses/**', 'sdk/cwin/**', 'sdk/cxl/**', 'sdk/tvision/**', 'sdk/packaging/build-sysroot.sh') }}
+          key: sysroots-${{ matrix.group }}-${{ needs.setup.outputs.llvm }}-${{ matrix.source == 'picolibc' && format('{0}-{1}-{2}-{3}-{4}', needs.setup.outputs.picolibc, env.TVISION_SHA, needs.setup.outputs.amiga, needs.setup.outputs.atari, needs.setup.outputs.unix) || format('{0}-gcc{1}', env.MINGW_SHA, env.GCC_VERSION) }}-${{ matrix.picolibc && needs.setup.outputs.picolibc || 'none' }}-${{ matrix.winsdk == 'win16-sdk' && needs.setup.outputs.win16 || needs.setup.outputs.win32 }}-${{ hashFiles('sdk/scripts/**', 'sdk/runtime/**', 'sdk/graphics/**', 'sdk/tui/**', 'sdk/curses/**', 'sdk/cwin/**', 'sdk/cxl/**', 'sdk/tvision/**', 'sdk/packaging/build-sysroot.sh') }}
       - name: Install build tools
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -453,6 +457,15 @@ jobs:
           echo "$LIBUNICOWS_SHA256  libunicows.tar.gz" | sha256sum -c
           tar -xzf libunicows.tar.gz
           mv libunicows-1.1.2 libunicows
+      - name: Get GCC (for libstdc++)
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.source == 'mingw' && !matrix.picolibc
+        run: |
+          curl -sSfL --retry 5 -o gcc.tar.xz \
+            "https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz"
+          echo "$GCC_SHA256  gcc.tar.xz" | sha256sum -c
+          tar -xJf gcc.tar.xz
+          mv "gcc-$GCC_VERSION" gcc
+          rm gcc.tar.xz
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -460,6 +473,7 @@ jobs:
             echo "::group::$name"
             BIN=$PWD/tools/bin LLVM_SRC=$PWD/llvm PICOLIBC_SRC=$PWD/picolibc TVISION_SRC=$PWD/tvision \
             MINGW_SRC=$PWD/mingw-w64 LIBUNICOWS_SRC=$PWD/libunicows WORK=$PWD/work-$name \
+            GCC_SRC=$([ -d gcc ] && echo "$PWD/gcc") \
             WIN16_SDK=$PWD/win16-sdk WIN32_SDK=$PWD/win32-sdk AMIGA_SDK=$PWD/amiga-sdk ATARI_SDK=$PWD/atari-sdk \
             UNIX_SDK=$PWD/unix-sdk \
               sh sdk/packaging/build-sysroot.sh "$name" "sysroot-$name/sysroot"
