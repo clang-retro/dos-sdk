@@ -328,8 +328,11 @@ clang --target=i8086-pc-win16 -Os -shared mylib.o -o MYLIB.DLL
 ### C++ on Windows
 
 C++ works as on DOS, with the same code limits. `-fexceptions` works in
-programs of every model and in compact and large DLLs; an exception must
-not cross between a DLL and its caller.
+programs and DLLs of every model; an exception must not cross between a
+DLL and its caller. A small or medium model DLL links the libraries of
+`lib/win16/<model>/dll/eh`. In a DLL, each task that calls it has its own
+list of contexts, found by its stack segment, because the contexts are on
+the caller's stack.
 
 ## Flag reference
 

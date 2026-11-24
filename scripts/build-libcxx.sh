@@ -8,6 +8,8 @@
 #                                     libunwind.a, for -fexceptions
 #   $SYSROOT/lib/win16/<model>/dll/   for 16-bit Windows DLLs in the small
 #                                     and medium models (-mwindows-dll)
+#   $SYSROOT/lib/win16/<model>/dll/eh/  the same with C++ exceptions, and
+#                                     libunwind.a
 #
 #   LLVM_SRC  llvm-project checkout     BIN  directory with clang and llvm-ar
 #   SYSROOT   sysroot that already has picolibc and the builtins
@@ -46,7 +48,7 @@ for m in ${MODELS:-tiny small medium compact large huge huge16}; do
 # Near-model Windows DLLs need code that keeps escaping locals in DGROUP.
 dll=
 if [ "$OS" = win16 ]; then
-  case $m in small|medium) dll=dll ;; esac
+  case $m in small|medium) dll="dll dlleh" ;; esac
 fi
 for eh in ${EH:-off on} $dll; do
   # The build with exceptions or for DLLs, its directory and its flags.
@@ -59,6 +61,9 @@ for eh in ${EH:-off on} $dll; do
     b=libcxx$tag-eh-$m dest=$libdir/$m/eh ehflag=-fexceptions EXC=ON ehopt=-Oz
   elif [ "$eh" = dll ]; then
     b=libcxx$tag-dll-$m dest=$libdir/$m/dll ehflag=-mwindows-dll EXC=OFF
+  elif [ "$eh" = dlleh ]; then
+    b=libcxx$tag-dlleh-$m dest=$libdir/$m/dll/eh
+    ehflag="-mwindows-dll -fexceptions" EXC=ON ehopt=-Oz
   else
     b=libcxx$tag-$m dest=$libdir/$m ehflag= EXC=OFF
   fi
@@ -106,10 +111,12 @@ for eh in ${EH:-off on} $dll; do
   cp "$WORK/install-$b/lib/libc++.a" "$WORK/install-$b/lib/libc++abi.a" \
      "$dest/"
   # The unwinder: SjLj function contexts (runtime/unwind-sjlj.c).
-  if [ "$eh" = on ]; then
+  if [ "$eh" = on ] || [ "$eh" = dlleh ]; then
+    uflags=
+    [ "$eh" = dlleh ] && uflags=-mwindows-dll
     "$BIN/clang" --target=i8086-pc-$OS $(model_flags $m) --sysroot="$SYSROOT" \
-      -fexceptions -Oz -ffunction-sections -c "$sdk/runtime/unwind-sjlj.c" \
-      -o "$WORK/$b/unwind-sjlj.o"
+      -fexceptions -Oz -ffunction-sections $uflags \
+      -c "$sdk/runtime/unwind-sjlj.c" -o "$WORK/$b/unwind-sjlj.o"
     rm -f "$dest/libunwind.a"
     "$BIN/llvm-ar" rcs "$dest/libunwind.a" "$WORK/$b/unwind-sjlj.o"
   fi

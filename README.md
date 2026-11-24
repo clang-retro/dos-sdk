@@ -272,7 +272,7 @@ instructions per call, but there are no unwind tables to keep in memory.
 A throw needs RTTI, which the eh libraries have; your own code needs
 `-frtti` only for `dynamic_cast` and `typeid`. There is no forced unwind
 (`_Unwind_ForcedUnwind`), and an exception cannot leave a Windows DLL:
-each DLL keeps its own list of contexts.
+each DLL keeps its own list of contexts, one for each task that calls it.
 
 `abi::__cxa_demangle` is in the medium, large, huge and huge16 builds of
 libc++abi. Its code is over 64 KiB with far data pointers, and close to it
