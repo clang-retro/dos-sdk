@@ -15,6 +15,12 @@
 #
 #   REPO       GitHub repository of the releases (default clang-retro/dos-sdk)
 #   URL        or the base URL of the files (such as file:///path/to/dist)
+#   MACOSX_SDK_URL  where to get Apple's MacOSX10.4u.sdk.tar.xz for the
+#              macosx10.4 sysroot (default: the phracker/MacOSX-SDKs
+#              release). The sysroot has only libc++ and the builtins, so
+#              the script puts the SDK in DIR/macosx10.4/MacOSX10.4u.sdk.
+#              Apple's license applies to the SDK. MACOSX_SDK_URL=none
+#              skips it.
 #
 # Needs curl, tar, xz and sha256sum (or shasum). Prints DIR when done.
 set -e
@@ -40,6 +46,20 @@ check() { # file
   echo "$want  $1" | sha -c - >/dev/null || { echo "error: $1 does not match SHA256SUMS" >&2; exit 1; }
 }
 
+# Downloads Apple's Mac OS X 10.4u SDK into directory $1, checked against
+# the SHA-256 that CI built the macosx10.4 sysroot with.
+get_macosx_sdk() {
+  sdk_url=${MACOSX_SDK_URL:-https://github.com/phracker/MacOSX-SDKs/releases/download/11.3/MacOSX10.4u.sdk.tar.xz}
+  [ "$sdk_url" = none ] && return 0
+  echo "Downloading MacOSX10.4u.sdk (Apple's license applies)" >&2
+  curl -fsSL --retry 5 --retry-all-errors -o sdk.tar.xz "$sdk_url"
+  echo "d28276ce6b0f14af30f3bfdc171f8ef4033652da593578568f8be189506c1021  sdk.tar.xz" | sha -c - >/dev/null ||
+    { echo "error: MacOSX10.4u.sdk.tar.xz does not match its SHA-256" >&2; exit 1; }
+  rm -rf "$1/MacOSX10.4u.sdk"
+  tar -C "$1" -xJf sdk.tar.xz
+  rm -f sdk.tar.xz
+}
+
 mkdir -p "$dir"
 dir=$(cd "$dir" && pwd)
 tmp=$(mktemp -d)
@@ -57,6 +77,7 @@ if [ -n "$sysroots" ]; then
     # Each archive holds one directory, NAME.
     tar -C "$dir" -xJf "$f"
     rm -f "$f"
+    case $s in macosx10.4) get_macosx_sdk "$dir/$s" ;; esac
   done
 else
   case $host in

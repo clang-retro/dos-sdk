@@ -2,7 +2,8 @@
 # Build compiler-rt builtins for 32-bit PowerPC Mac OS X into
 # <clang resource dir>/lib/darwin/libclang_rt.ppc_osx.a, which clang links
 # in place of Apple's libcc_dynamic.a (10.0 to 10.3) and after
-# libgcc_s.1.dylib (10.4 and 10.5).
+# libgcc_s.1.dylib (10.4 and 10.5). With ARCH=i386, build the builtins of
+# Intel Mac OS X 10.4 into libclang_rt.osx.a.
 #
 #   LLVM_SRC  llvm-project checkout     BIN  directory with clang and llvm-ar
 #   WORK      build directory (default: ./build-builtins-macosx)
@@ -13,6 +14,10 @@
 #             emulated TLS (emutls.c) and the atomic library functions
 #             (atomic.c), which thread_local and std::atomic of large types
 #             need on 10.4 and 10.5
+#   ARCH      ppc (default) or i386. For i386 (Intel Mac OS X 10.4 to 10.6),
+#             the library is libclang_rt.osx.a and has only emulated TLS and
+#             the atomic library functions: libgcc_s.1.dylib of the system
+#             has the other helpers. i386 needs SDK (MacOSX10.4u.sdk).
 #
 # The generic helpers use only clang's own headers. The archive
 # is made with Apple's libtool because llvm-ar writes the BSD symbol table
@@ -28,6 +33,21 @@ LIBTOOL=${LIBTOOL:-powerpc-apple-darwin8-libtool}
 WORK=${WORK:-$PWD/build-builtins-macosx}
 DEST=${DEST:-$("$BIN/clang" -print-resource-dir)/lib/darwin}
 src=$LLVM_SRC/compiler-rt/lib/builtins
+
+if [ "${ARCH:-ppc}" = i386 ]; then
+  : "${SDK:?set SDK to MacOSX10.4u.sdk for i386}"
+  objs=$WORK/objs-i386
+  rm -rf "$objs"
+  mkdir -p "$objs" "$DEST"
+  for f in emutls atomic; do
+    "$BIN/clang" --target=i386-apple-macosx10.4 -isysroot "$SDK" -O2 \
+      -c "$src/$f.c" -o "$objs/$f.o"
+  done
+  rm -f "$DEST/libclang_rt.osx.a"
+  "$LIBTOOL" -static -o "$DEST/libclang_rt.osx.a" "$objs"/*
+  echo "installed $DEST/libclang_rt.osx.a"
+  exit 0
+fi
 # Keep the host's headers out: Linux headers don't describe Mac OS X.
 cflags="-ffreestanding -nostdlibinc -mcpu=750"
 

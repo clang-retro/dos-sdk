@@ -128,6 +128,10 @@ env:
   EMUTOS_VERSION: '1.4'
   EMUTOS_192K_SHA256: 59abac06a2d29b0864c5a7cfb2af65f022c337aed34188e174a9a08cc737e4bc
   EMUTOS_512K_SHA256: 1ef7bd25f61bcfc66d19debc2f0ebb0d5e5ba811ccd7f0fddfcb105bb72d1663
+  # Apple's Mac OS X 10.4u SDK, to build the macosx10.4 sysroot against. The
+  # sysroot does not contain it; get-toolchain.sh downloads it.
+  MACOSX_SDK_URL: https://github.com/phracker/MacOSX-SDKs/releases/download/11.3/MacOSX10.4u.sdk.tar.xz
+  MACOSX_SDK_SHA256: d28276ce6b0f14af30f3bfdc171f8ef4033652da593578568f8be189506c1021
   # Wine's .spec files, which win16-sdk's headers are checked against.
   WINE_SPECS_TAG: wine-10.0
 
@@ -352,6 +356,11 @@ jobs:
             source: mingw
             picolibc: true
             winsdk: win32-sdk
+          # libc++ and the builtins for Mac OS X 10.4 (PowerPC and Intel),
+          # built against Apple's 10.4u SDK, which is not in the sysroot.
+          - group: macosx
+            names: macosx10.4
+            source: macosx
     steps:
       - uses: actions/checkout@v4
         with:
@@ -362,6 +371,7 @@ jobs:
       # win16-sdk for the DOS sysroot (its Windows 1.x-3.x libraries),
       # win32-sdk for the Windows ones.
       - uses: actions/checkout@v4
+        if: matrix.winsdk
         with:
           repository: clang-dos/${{ matrix.winsdk }}
           ref: ${{ matrix.winsdk == 'win16-sdk' && needs.setup.outputs.win16 || needs.setup.outputs.win32 }}
@@ -393,7 +403,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: sysroot-*.tar
-          key: sysroots-${{ matrix.group }}-${{ needs.setup.outputs.llvm }}-${{ matrix.source == 'picolibc' && format('{0}-{1}-{2}-{3}-{4}', needs.setup.outputs.picolibc, env.TVISION_SHA, needs.setup.outputs.amiga, needs.setup.outputs.atari, needs.setup.outputs.unix) || format('{0}-gcc{1}', env.MINGW_SHA, env.GCC_VERSION) }}-${{ matrix.picolibc && needs.setup.outputs.picolibc || 'none' }}-${{ matrix.winsdk == 'win16-sdk' && needs.setup.outputs.win16 || needs.setup.outputs.win32 }}-${{ hashFiles('sdk/scripts/**', 'sdk/runtime/**', 'sdk/graphics/**', 'sdk/tui/**', 'sdk/curses/**', 'sdk/cwin/**', 'sdk/cxl/**', 'sdk/tvision/**', 'sdk/packaging/build-sysroot.sh') }}
+          key: sysroots-${{ matrix.group }}-${{ needs.setup.outputs.llvm }}-${{ matrix.source == 'picolibc' && format('{0}-{1}-{2}-{3}-{4}', needs.setup.outputs.picolibc, env.TVISION_SHA, needs.setup.outputs.amiga, needs.setup.outputs.atari, needs.setup.outputs.unix) || (matrix.source == 'macosx' && env.MACOSX_SDK_SHA256 || format('{0}-gcc{1}', env.MINGW_SHA, env.GCC_VERSION)) }}-${{ matrix.picolibc && needs.setup.outputs.picolibc || 'none' }}-${{ matrix.winsdk == 'win16-sdk' && needs.setup.outputs.win16 || needs.setup.outputs.win32 }}-${{ hashFiles('sdk/scripts/**', 'sdk/runtime/**', 'sdk/graphics/**', 'sdk/tui/**', 'sdk/curses/**', 'sdk/cwin/**', 'sdk/cxl/**', 'sdk/tvision/**', 'sdk/packaging/build-sysroot.sh') }}
       - name: Install build tools
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -466,6 +476,16 @@ jobs:
           tar -xJf gcc.tar.xz
           mv "gcc-$GCC_VERSION" gcc
           rm gcc.tar.xz
+      # Apple's linker and archiver, and the 10.4u SDK to build against.
+      - name: Get cctools and the Mac OS X 10.4u SDK
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.source == 'macosx'
+        run: |
+          sudo apt-get install -y -q --no-install-recommends automake autoconf libtool uuid-dev libssl-dev
+          PREFIX=$PWD/cctools-ppc sh sdk/scripts/build-cctools-ppc.sh >cctools.log 2>&1 || { tail -50 cctools.log; exit 1; }
+          echo "$PWD/cctools-ppc/bin" >> "$GITHUB_PATH"
+          curl -sSfL --retry 5 -o sdk104u.tar.xz "$MACOSX_SDK_URL"
+          echo "$MACOSX_SDK_SHA256  sdk104u.tar.xz" | sha256sum -c
+          mkdir macosx-sdk && tar -C macosx-sdk -xJf sdk104u.tar.xz && rm sdk104u.tar.xz
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -475,7 +495,7 @@ jobs:
             MINGW_SRC=$PWD/mingw-w64 LIBUNICOWS_SRC=$PWD/libunicows WORK=$PWD/work-$name \
             GCC_SRC=$([ -d gcc ] && echo "$PWD/gcc") \
             WIN16_SDK=$PWD/win16-sdk WIN32_SDK=$PWD/win32-sdk AMIGA_SDK=$PWD/amiga-sdk ATARI_SDK=$PWD/atari-sdk \
-            UNIX_SDK=$PWD/unix-sdk \
+            UNIX_SDK=$PWD/unix-sdk MACOSX_SDK=$PWD/macosx-sdk/MacOSX10.4u.sdk \
               sh sdk/packaging/build-sysroot.sh "$name" "sysroot-$name/sysroot"
             tar -cf "sysroot-$name.tar" -C "sysroot-$name" sysroot
             rm -rf "work-$name" "sysroot-$name"

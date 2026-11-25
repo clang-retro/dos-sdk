@@ -1,9 +1,10 @@
 #!/bin/sh
 # Build libc++, libc++abi and libunwind as static libraries for 32-bit
-# PowerPC Mac OS X, for C++ programs that want a modern standard library in
-# place of Apple's libstdc++.
+# Mac OS X (PowerPC or Intel), for C++ programs that want a modern standard
+# library in place of Apple's libstdc++.
 #
 #   LLVM_SRC  llvm-project checkout     BIN  directory with clang
+#   ARCH      ppc (default) or i386. Intel needs MacOSX10.4u.sdk.
 #   SDK       MacOSX10.4.0.sdk (or 10.4u), or a 10.0 sysroot
 #   OSX_VERSION  the version to build for (default: 10.4)
 #   WORK      build directory (default: ./build-libcxx-macosx)
@@ -16,6 +17,8 @@
 #
 # Needs powerpc-apple-darwin8-ar and -ranlib on PATH (scripts/build-cctools-
 # ppc.sh): ld64 can't read the symbol table llvm-ar writes for PowerPC.
+# These tools also make the archives for Intel. scripts/build-runtime-
+# macosx.sh builds both and joins them into fat libraries.
 #
 # For 10.4 and later, the libraries have threads, locales, wide characters,
 # the file system library and the monotonic clock. They need clang-retro's
@@ -32,7 +35,12 @@ set -e
 WORK=${WORK:-$PWD/build-libcxx-macosx}
 PREFIX=${PREFIX:-$PWD/libcxx-macosx}
 version=${OSX_VERSION:-10.4}
-target=powerpc-apple-macosx$version
+arch=${ARCH:-ppc}
+case $arch in
+  ppc) target=powerpc-apple-macosx$version ;;
+  i386) target=i386-apple-macosx$version ;;
+  *) echo "ARCH is ppc or i386" >&2; exit 2 ;;
+esac
 # PRIx64 and friends: the 10.4 inttypes.h only defines them for C++ when
 # asked.
 flags=-D__STDC_FORMAT_MACROS
@@ -51,7 +59,7 @@ cmake -G Ninja -S "$LLVM_SRC/runtimes" -B "$WORK" \
   -DCMAKE_ASM_COMPILER="$BIN/clang" \
   -DCMAKE_C_COMPILER_TARGET=$target -DCMAKE_CXX_COMPILER_TARGET=$target \
   -DCMAKE_ASM_COMPILER_TARGET=$target \
-  -DCMAKE_OSX_SYSROOT="$SDK" -DCMAKE_OSX_ARCHITECTURES=ppc \
+  -DCMAKE_OSX_SYSROOT="$SDK" -DCMAKE_OSX_ARCHITECTURES=$arch \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=$version \
   -DCMAKE_AR="$(command -v powerpc-apple-darwin8-ar)" \
   -DCMAKE_RANLIB="$(command -v powerpc-apple-darwin8-ranlib)" \
