@@ -121,6 +121,11 @@ has no helper library of its own. Programs for 10.4 and 10.5 still use
 Without it, 10.0 to 10.3 fall back to the 10.0 Developer Tools'
 `libcc_dynamic.a`.
 
+Set `SDK` to the 10.4 SDK as well, and the library also gets emulated
+thread-local storage (`emutls.c`) and the atomic library functions
+(`atomic.c`). C++ `thread_local` and `std::atomic` of large types need
+them on 10.4 and 10.5, and libc++ with threads needs them too.
+
 clang uses `powerpc-apple-darwin8-ld` as the linker when it finds it next
 to itself, in a `-B` directory or on `PATH`, so `LD` and `--ld-path` are
 only needed for another linker.
@@ -138,8 +143,10 @@ has from 10.3; `NS_DURING` works everywhere.
 ## C++
 
 `scripts/build-libcxx-macosx.sh` builds static libc++, libc++abi and
-libunwind (without threads, locales, wide characters or `<filesystem>`).
-For 10.4 and 10.5:
+libunwind. For 10.4 and later, they have threads, locales, wide
+characters and `<filesystem>`. This needs clang-retro's llvm-project and
+the builtins built with `SDK` set (see above). For 10.0 to 10.3, or with
+`MINIMAL=1`, they leave these parts out. For 10.4 and 10.5:
 
     PATH=/path/to/cctools-ppc/bin:$PATH \
     LLVM_SRC=/path/to/llvm BIN=/path/to/llvm/build/bin \

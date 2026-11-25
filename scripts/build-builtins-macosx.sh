@@ -9,8 +9,12 @@
 #   DEST      output directory (default: clang's resource dir/lib/darwin)
 #   LIBTOOL   Apple's libtool from scripts/build-cctools-ppc.sh (default:
 #             powerpc-apple-darwin8-libtool on PATH)
+#   SDK       MacOSX10.4.0.sdk (optional): with it, the library also gets
+#             emulated TLS (emutls.c) and the atomic library functions
+#             (atomic.c), which thread_local and std::atomic of large types
+#             need on 10.4 and 10.5
 #
-# No SDK is needed: the builtins only use clang's own headers. The archive
+# The generic helpers use only clang's own headers. The archive
 # is made with Apple's libtool because llvm-ar writes the BSD symbol table
 # little-endian, and ld64 reads it big-endian for PowerPC.
 #
@@ -56,6 +60,15 @@ done
 # __eprintf, which <assert.h> calls before 10.4.
 "$BIN/clang" --target=powerpc-apple-macosx10.0 $cflags -O2 \
   -c "$(dirname "$0")/../macosx/builtins/eprintf.c" -o "$objs/eprintf.o"
+
+# Emulated TLS and the atomic library functions, for 10.4 and later: they
+# use pthreads, so they need the SDK's headers.
+if [ -n "$SDK" ]; then
+  for f in emutls atomic; do
+    "$BIN/clang" --target=powerpc-apple-macosx10.4 -isysroot "$SDK" -mcpu=750 -O2 \
+      -c "$src/$f.c" -o "$objs/$f.o"
+  done
+fi
 
 mkdir -p "$DEST"
 rm -f "$DEST/libclang_rt.ppc_osx.a"

@@ -17,10 +17,13 @@
 # Needs powerpc-apple-darwin8-ar and -ranlib on PATH (scripts/build-cctools-
 # ppc.sh): ld64 can't read the symbol table llvm-ar writes for PowerPC.
 #
-# The libraries leave out threads, locales, wide characters and the file
-# system library, which need more of the C library than 10.4 has, and the
-# parallel algorithms run serially (libdispatch arrived in 10.6). Build a
-# program with:
+# For 10.4 and later, the libraries have threads, locales, wide characters,
+# the file system library and the monotonic clock. They need clang-retro's
+# llvm-project (it fills the gaps of the 10.4 C library) and the builtins
+# of scripts/build-builtins-macosx.sh built with SDK set (emulated TLS and
+# the atomic library functions). For versions before 10.4, or with
+# MINIMAL=1, the libraries leave these parts out. The parallel algorithms
+# run serially (libdispatch arrived in 10.6). Build a program with:
 #   clang++ --target=powerpc-apple-macosx10.4 -isysroot $SDK -nostdinc++ \
 #     -isystem $PREFIX/include/c++/v1 x.cpp -nostdlib++ -L$PREFIX/lib \
 #     -lc++ -lc++abi -lunwind
@@ -33,6 +36,12 @@ target=powerpc-apple-macosx$version
 # PRIx64 and friends: the 10.4 inttypes.h only defines them for C++ when
 # asked.
 flags=-D__STDC_FORMAT_MACROS
+# The parts that need more of the C library than 10.0 to 10.3 have.
+case $version in
+  10.[0-3]) full=OFF ;;
+  *) full=ON ;;
+esac
+[ "${MINIMAL:-0}" = 1 ] && full=OFF
 
 cmake -G Ninja -S "$LLVM_SRC/runtimes" -B "$WORK" \
   -DLLVM_ENABLE_RUNTIMES="libunwind;libcxxabi;libcxx" \
@@ -48,14 +57,15 @@ cmake -G Ninja -S "$LLVM_SRC/runtimes" -B "$WORK" \
   -DCMAKE_RANLIB="$(command -v powerpc-apple-darwin8-ranlib)" \
   -DCMAKE_C_FLAGS="$flags" -DCMAKE_CXX_FLAGS="$flags" \
   -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-  -DLIBUNWIND_ENABLE_SHARED=OFF -DLIBUNWIND_ENABLE_THREADS=OFF \
-  -DLIBCXXABI_ENABLE_SHARED=OFF -DLIBCXXABI_ENABLE_THREADS=OFF \
+  -DLIBUNWIND_ENABLE_SHARED=OFF -DLIBUNWIND_ENABLE_THREADS=$full \
+  -DLIBCXXABI_ENABLE_SHARED=OFF -DLIBCXXABI_ENABLE_THREADS=$full \
+  -DLIBCXXABI_HAS_CXA_THREAD_ATEXIT_IMPL=OFF \
   -DLIBCXXABI_USE_LLVM_UNWINDER=ON -DLIBCXXABI_ENABLE_STATIC_UNWINDER=ON \
-  -DLIBCXX_ENABLE_SHARED=OFF -DLIBCXX_ENABLE_THREADS=OFF \
+  -DLIBCXX_ENABLE_SHARED=OFF -DLIBCXX_ENABLE_THREADS=$full \
   -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON -DLIBCXX_CXX_ABI=libcxxabi \
-  -DLIBCXX_ENABLE_LOCALIZATION=OFF -DLIBCXX_ENABLE_WIDE_CHARACTERS=OFF \
-  -DLIBCXX_ENABLE_FILESYSTEM=OFF -DLIBCXX_ENABLE_RANDOM_DEVICE=OFF \
-  -DLIBCXX_ENABLE_MONOTONIC_CLOCK=OFF -DLIBCXX_PSTL_BACKEND=serial \
+  -DLIBCXX_ENABLE_LOCALIZATION=$full -DLIBCXX_ENABLE_WIDE_CHARACTERS=$full \
+  -DLIBCXX_ENABLE_FILESYSTEM=$full -DLIBCXX_ENABLE_RANDOM_DEVICE=OFF \
+  -DLIBCXX_ENABLE_MONOTONIC_CLOCK=$full -DLIBCXX_PSTL_BACKEND=serial \
   -DLIBCXX_ENABLE_TIME_ZONE_DATABASE=OFF \
   -DLIBCXX_ENABLE_VENDOR_AVAILABILITY_ANNOTATIONS=OFF \
   -DLIBCXX_INCLUDE_TESTS=OFF -DLIBCXX_INCLUDE_BENCHMARKS=OFF \
