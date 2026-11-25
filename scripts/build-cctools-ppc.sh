@@ -28,6 +28,14 @@ if git apply --check "$patch" 2>/dev/null; then
   git apply "$patch"
 fi
 cd cctools
+# The repository holds ltmain.sh from libtool 2.4.7. autogen.sh does not
+# replace it, and a newer libtool on the host then stops the build with a
+# version mismatch. Replace the libtool files with the host version first.
+if command -v glibtoolize >/dev/null 2>&1; then
+  glibtoolize --copy --install --force
+else
+  libtoolize --copy --install --force
+fi
 ./autogen.sh
 ./configure --prefix="$PREFIX" --target=powerpc-apple-darwin8 \
   CC="${CC:-clang}" CXX="${CXX:-clang++}"
