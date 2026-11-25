@@ -13,8 +13,9 @@
 # It does not target 10.0 to 10.3; that needs the classic cctools ld.
 #
 # cctools-ppc-old-objects.patch lets ld64 link the gcc-built objects in
-# Apple's 10.4 SDK, such as crt1.o: they have more than one stub section
-# and take dylib function addresses as "stub - picbase".
+# Apple's 10.4 and 10.4u SDKs, such as crt1.o: they have more than one stub
+# section and take dylib function addresses as "stub - picbase" (10.4) or
+# as the hi16 and lo16 of the stub (10.4u).
 set -e
 patch=$(cd "$(dirname "$0")" && pwd)/cctools-ppc-old-objects.patch
 PREFIX=${PREFIX:-$PWD/cctools-ppc}

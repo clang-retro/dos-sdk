@@ -29,9 +29,11 @@ PREFIX=${PREFIX:-$PWD/macosx10.4}
 here=$(cd "$(dirname "$0")" && pwd)
 
 for arch in ppc i386; do
-  ARCH=$arch WORK=$WORK/libcxx-$arch PREFIX=$WORK/install-$arch OSX_VERSION=10.4 \
+  libcxx_work=$WORK/libcxx-$arch libcxx_prefix=$WORK/install-$arch
+  builtins_work=$WORK/builtins-$arch builtins_dest=$WORK/builtins
+  ARCH=$arch WORK=$libcxx_work PREFIX=$libcxx_prefix OSX_VERSION=10.4 \
     sh "$here/build-libcxx-macosx.sh"
-  ARCH=$arch WORK=$WORK/builtins-$arch DEST=$WORK/builtins \
+  ARCH=$arch WORK=$builtins_work DEST=$builtins_dest \
     sh "$here/build-builtins-macosx.sh"
 done
 

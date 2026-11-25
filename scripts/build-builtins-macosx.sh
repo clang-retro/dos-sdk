@@ -15,9 +15,9 @@
 #             (atomic.c), which thread_local and std::atomic of large types
 #             need on 10.4 and 10.5
 #   ARCH      ppc (default) or i386. For i386 (Intel Mac OS X 10.4 to 10.6),
-#             the library is libclang_rt.osx.a and has only emulated TLS and
-#             the atomic library functions: libgcc_s.1.dylib of the system
-#             has the other helpers. i386 needs SDK (MacOSX10.4u.sdk).
+#             the library is libclang_rt.osx.a and has only emulated TLS,
+#             the atomic library functions and __eprintf: libgcc_s.1.dylib
+#             of the system has the other helpers. i386 needs SDK (MacOSX10.4u.sdk).
 #
 # The generic helpers use only clang's own headers. The archive
 # is made with Apple's libtool because llvm-ar writes the BSD symbol table
@@ -43,6 +43,9 @@ if [ "${ARCH:-ppc}" = i386 ]; then
     "$BIN/clang" --target=i386-apple-macosx10.4 -isysroot "$SDK" -O2 \
       -c "$src/$f.c" -o "$objs/$f.o"
   done
+  # __eprintf, which <assert.h> of the 10.4u SDK calls on Intel too.
+  "$BIN/clang" --target=i386-apple-macosx10.4 -isysroot "$SDK" -O2 \
+    -c "$(dirname "$0")/../macosx/builtins/eprintf.c" -o "$objs/eprintf.o"
   rm -f "$DEST/libclang_rt.osx.a"
   "$LIBTOOL" -static -o "$DEST/libclang_rt.osx.a" "$objs"/*
   echo "installed $DEST/libclang_rt.osx.a"
