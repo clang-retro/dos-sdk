@@ -129,11 +129,12 @@ build "dos32" dos32.exe $CC --config=dos32.cfg -Os hello.c &&
   rundos32 "dos32" "Hello, world from smoke! 42 123456789 3.25" dos32.exe
 build "dos32-cxx" dos32-cxx.exe $CXX --config=dos32.cfg -Os hello.cpp &&
   rundos32 "dos32-cxx" "Hello, world from smoke! 42" dos32-cxx.exe
+# (build sets n, so the loop uses tn.)
 for t in libc:c hw:c cxx:cpp threads:cpp; do
-  n=${t%%:*} e=${t#*:}
+  tn=${t%%:*} e=${t#*:}
   case $e in c) cc=$CC ;; *) cc=$CXX ;; esac
-  build "dos32-$n" "dos32-$n.exe" $cc --config=dos32.cfg -O2 "$tools/dos32-tests/$n.$e" &&
-    rundos32 "dos32-$n" "PASS dos32 $n" "dos32-$n.exe"
+  build "dos32-$tn" "dos32-$tn.exe" $cc --config=dos32.cfg -O2 "$tools/dos32-tests/$tn.$e" &&
+    rundos32 "dos32-$tn" "PASS dos32 $tn" "dos32-$tn.exe"
 done
 
 echo "== 16-bit Windows (i8086-win16)"

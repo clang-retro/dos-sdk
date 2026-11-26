@@ -17,7 +17,7 @@ dir=$(mktemp -d)
 trap 'rm -rf "$dir"' EXIT
 # The copy gets a short name, because DOS names have 8 + 3 characters.
 case $prog in *.com | *.COM) name=RUN.COM ;; *) name=RUN.EXE ;; esac
-cp "$prog" "$dir/$name"
+cp "$prog" "$dir/$name" || exit 1
 cat >"$dir/run.conf" <<CONF
 [sdl]
 output=surface
