@@ -37,6 +37,13 @@ segment, and the heap takes all free DOS memory.
 [docs/memory-models.md](docs/memory-models.md) helps you choose a model
 for your program, with the clang flags for common cases.
 
+## 32-bit DOS
+
+The `i386-pc-msdos` target makes flat 32-bit DOS programs that carry the
+DOS/32A extender inside the `.exe`
+(`clang --config=dos32.cfg hello.c -o hello.exe`). See
+[docs/dos32.md](docs/dos32.md).
+
 ## Full-screen programs
 
 For full-screen DOS programs, the sysroot also has `<conio.h>` (in the C
