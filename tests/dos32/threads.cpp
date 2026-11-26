@@ -1,7 +1,9 @@
 // threads.cpp - a test of C++ threads on 32-bit DOS (i386-pc-msdos): the
 // cooperative threads of the C library under std::thread, std::mutex,
 // std::condition_variable, thread_local, an exception in a thread, and
-// the steady clock. It writes "PASS dos32 threads" when all checks pass.
+// the steady clock, thread_local destructors and a 64-bit atomic. It
+// writes "PASS dos32 threads" when all checks pass.
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
@@ -15,6 +17,15 @@ static std::condition_variable cv;
 static bool go = false;
 static int total = 0;
 static thread_local int mine = 7;
+static int ended = 0;
+static std::atomic<long long> wide(0);
+
+// An object whose destructor runs when its thread ends.
+struct Counted {
+  int used = 0;
+  ~Counted() { ended += used; }
+};
+static thread_local Counted counted;
 
 // Waits for the start signal, then adds to the total under the mutex.
 // Gives 1 when its thread-local copy kept its value.
@@ -24,6 +35,8 @@ static int work(int id) {
     cv.wait(l, [] { return go; });
   }
   mine = id;
+  counted.used = 1;
+  wide += 1LL << 33;
   for (int i = 0; i < 500; i++) {
     std::lock_guard<std::mutex> g(m);
     total++;
@@ -53,6 +66,8 @@ int main() {
     if (!ok[i]) { std::printf("thread %d lost its thread_local\n", i); bad++; }
   if (total != 2000) { std::printf("total %d\n", total); bad++; }
   if (mine != 7) { std::printf("main thread_local %d\n", mine); bad++; }
+  if (ended != 4) { std::printf("thread_local destructors %d\n", ended); bad++; }
+  if (wide.load() != 4LL << 33) { std::printf("atomic %lld\n", wide.load()); bad++; }
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
   if (ms < 50 || ms > 5000) { std::printf("steady clock %ld ms\n", (long)ms); bad++; }
