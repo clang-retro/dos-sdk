@@ -161,6 +161,22 @@ For 10.0, prepare the sysroot as below, then run the script with
 `OSX_VERSION=10.0` and `SDK` set to the sysroot, and link programs with
 `-lc99` as well.
 
+## Intel and fat programs
+
+`ARCH=i386` builds the scripts' libraries for Intel Mac OS X 10.4 and
+later. Use `MacOSX10.4u.sdk`: it has the libraries of both processors.
+clang uses emulated thread-local variables for 32-bit Mac OS X before
+10.7 on PowerPC and on Intel.
+
+`scripts/build-runtime-macosx.sh` builds libc++ and the builtins for both
+processors and joins the libraries with `lipo` into fat libraries. CI
+builds the result as the `macosx10.4` sysroot. That sysroot has no files
+from Apple. `packaging/get-toolchain.sh -s macosx10.4 DIR` downloads the
+sysroot and `MacOSX10.4u.sdk` into `DIR/macosx10.4`.
+
+To make a fat program, link it once for each processor and join the two
+programs with `powerpc-apple-darwin8-lipo -create`.
+
 ## The C99 library for 10.0
 
 Mac OS X 10.0 to 10.2 have little of C99's library: no float or long double

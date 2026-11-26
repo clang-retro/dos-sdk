@@ -1,5 +1,5 @@
 diff --git a/cctools/ld64/src/ld/parsers/macho_relocatable_file.cpp b/cctools/ld64/src/ld/parsers/macho_relocatable_file.cpp
-index d77884c..d59cd59 100644
+index 561d2c1..26530aa 100644
 --- a/cctools/ld64/src/ld/parsers/macho_relocatable_file.cpp
 +++ b/cctools/ld64/src/ld/parsers/macho_relocatable_file.cpp
 @@ -2596,7 +2596,9 @@ void Parser<A>::makeSections()
@@ -14,10 +14,10 @@ index d77884c..d59cd59 100644
  					_stubsMachOSection = sect;
  				}
 diff --git a/cctools/ld64/src/ld/passes/stubs/stubs.cpp b/cctools/ld64/src/ld/passes/stubs/stubs.cpp
-index a92ed69..f3a221c 100644
+index a92ed69..80d37ad 100644
 --- a/cctools/ld64/src/ld/passes/stubs/stubs.cpp
 +++ b/cctools/ld64/src/ld/passes/stubs/stubs.cpp
-@@ -117,6 +117,13 @@ const ld::Atom* Pass::stubableFixup(const ld::Fixup* fixup, ld::Internal& state)
+@@ -117,6 +117,24 @@ const ld::Atom* Pass::stubableFixup(const ld::Fixup* fixup, ld::Internal& state)
  {
  	if ( fixup->binding == ld::Fixup::bindingsIndirectlyBound ) {
  		const ld::Atom* target = state.indirectBindingTable[fixup->u.bindingIndex];
@@ -26,6 +26,17 @@ index a92ed69..f3a221c 100644
 +		// calls it through CTR. Point that difference at a stub of our own.
 +		if ( (_architecture == CPU_TYPE_POWERPC) && (fixup->kind == ld::Fixup::kindSetTargetAddress)
 +				&& !fixup->lastInCluster() && ((fixup+1)->kind == ld::Fixup::kindSubtractTargetAddress)
++				&& (target != NULL) && (target->definition() == ld::Atom::definitionProxy) )
++			return target;
++		// PowerPC: the 10.4u crt1.o, which is not PIC, takes the address of a
++		// stub with lis/ori (hi16 and lo16 of the stub). Point it at a stub
++		// of our own.
++		if ( (_architecture == CPU_TYPE_POWERPC) && (fixup->kind == ld::Fixup::kindSetTargetAddress)
++				&& !fixup->lastInCluster()
++				&& (((fixup+1)->kind == ld::Fixup::kindStorePPCAbsLow16)
++					|| ((fixup+1)->kind == ld::Fixup::kindStorePPCAbsLow14)
++					|| ((fixup+1)->kind == ld::Fixup::kindStorePPCAbsHigh16)
++					|| ((fixup+1)->kind == ld::Fixup::kindStorePPCAbsHigh16AddLow))
 +				&& (target != NULL) && (target->definition() == ld::Atom::definitionProxy) )
 +			return target;
  		switch ( fixup->kind ) {

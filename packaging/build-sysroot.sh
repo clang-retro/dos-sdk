@@ -19,6 +19,11 @@
 #                   i386-pc-solaris    Solaris 2.5 to 11.4, 32-bit x86
 #                   i386-unknown-freebsd  FreeBSD 3.0 and later, 32-bit x86
 #                   i386-unknown-netbsd   NetBSD 1.5 and later, 32-bit x86
+#                   macosx10.4      Mac OS X 10.4 and later, PowerPC and
+#                                   Intel: fat libc++, libc++abi, libunwind
+#                                   and the builtins (lib/darwin). Nothing
+#                                   from Apple is in it; use it with
+#                                   MacOSX10.4u.sdk.
 #   OUTPUT          the sysroot directory
 #   BIN             directory with clang, llvm-ar and so on (and jwlink)
 #   LLVM_SRC        clang-dos/llvm checkout
@@ -38,6 +43,8 @@
 #   GCC_SRC         unpacked GCC release (optional; the Windows sysroots get
 #                   libstdc++ from it, see win32-sdk's docs/libstdcxx.md)
 #   LIBUNICOWS_SRC  unpacked libunicows-1.1.2-src.tar.gz (win9x-msvcrt)
+#   MACOSX_SDK      MacOSX10.4u.sdk (macosx10.4), with the cctools of
+#                   scripts/build-cctools-ppc.sh on PATH
 #   WORK            build directory (default: ./build-sysroot-NAME)
 set -e
 name=${1:?usage: build-sysroot.sh NAME OUTPUT} out=${2:?}
@@ -107,6 +114,10 @@ i386-unknown-netbsd)
   : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${UNIX_SDK:?set UNIX_SDK}"
   export PICOLIBC_SRC
   BSD=netbsd sh "$UNIX_SDK/bsd/build-sysroot.sh" "$SYSROOT"
+  ;;
+macosx10.4)
+  : "${MACOSX_SDK:?set MACOSX_SDK}"
+  SDK=$MACOSX_SDK PREFIX=$SYSROOT sh "$sdk/scripts/build-runtime-macosx.sh"
   ;;
 *)
   echo "unknown sysroot $name" >&2; exit 1 ;;
