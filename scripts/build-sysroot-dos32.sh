@@ -69,7 +69,8 @@ cmake -G Ninja -S "$LLVM_SRC/compiler-rt/lib/builtins" -B "$WORK/builtins" \
   -DCMAKE_CXX_COMPILER="$BIN/clang++" \
   -DCMAKE_C_COMPILER_TARGET=$target -DCMAKE_CXX_COMPILER_TARGET=$target \
   -DCMAKE_ASM_COMPILER_TARGET=$target \
-  -DCMAKE_C_FLAGS="-march=i386" -DCMAKE_ASM_FLAGS="-march=i386" \
+  -DCMAKE_C_FLAGS="-march=i386 --sysroot=$SYSROOT" \
+  -DCMAKE_ASM_FLAGS="-march=i386 --sysroot=$SYSROOT" \
   -DCMAKE_AR="$BIN/llvm-ar" -DCMAKE_RANLIB="$BIN/llvm-ranlib" \
   -DCMAKE_NM="$BIN/llvm-nm" \
   -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
