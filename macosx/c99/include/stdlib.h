@@ -22,6 +22,10 @@ unsigned long long strtoull(const char *, char **, int);
 float strtof(const char *, char **);
 long double strtold(const char *, char **);
 void _Exit(int) __attribute__((__noreturn__));
+/* The system header marks these with __dead, which is empty for clang.
+ * Without the mark, code after them seems to continue. */
+void abort(void) __attribute__((__noreturn__));
+void exit(int) __attribute__((__noreturn__));
 
 #ifdef __cplusplus
 }

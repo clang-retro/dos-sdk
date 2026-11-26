@@ -145,8 +145,10 @@ has from 10.3; `NS_DURING` works everywhere.
 `scripts/build-libcxx-macosx.sh` builds static libc++, libc++abi and
 libunwind. For 10.4 and later, they have threads, locales, wide
 characters and `<filesystem>`. This needs clang-retro's llvm-project and
-the builtins built with `SDK` set (see above). For 10.0 to 10.3, or with
-`MINIMAL=1`, they leave these parts out. For 10.4 and 10.5:
+the builtins built with `SDK` set (see above). For 10.0 to 10.3, they
+have threads, wide characters and the monotonic clock (on `libc99.a`, see
+below), but no locales, streams or `<filesystem>`. With `MINIMAL=1`, they
+have none of these parts. For 10.4 and 10.5:
 
     PATH=/path/to/cctools-ppc/bin:$PATH \
     LLVM_SRC=/path/to/llvm BIN=/path/to/llvm/build/bin \
@@ -197,13 +199,34 @@ declares them as pointers. The second builds `libc99.a`:
   programs keep Apple's `sin` and `printf`;
 - the long double functions, which call the double ones (long double is
   double before 10.4);
-- `llabs`, `lldiv`, `strtoll` and the like, on the BSD `strtoq`.
+- `llabs`, `lldiv`, `strtoll` and the like, on the BSD `strtoq`;
+- the `<wchar.h>` and `<wctype.h>` functions (UTF-8, and the character
+  classes of ASCII and Latin-1);
+- `dlopen` and the other `<dlfcn.h>` functions, over dyld's `NS...`
+  functions;
+- recursive mutexes for 10.0 and 10.1;
+- `localtime_r`, `gmtime_r`, `strerror_r`, the `getpw`/`getgr` `_r`
+  functions, `pread`, `pwrite`, `poll`, `inet_pton`, `inet_ntop`,
+  `__cxa_atexit`, `_NSGetExecutablePath` and the `OSSpinLock` functions.
+
+A function goes into the library only when the sysroot's libSystem does
+not have it.
 
 It installs the library in `usr/local/lib` of the sysroot and headers in
 `usr/local/include`: additions to `<math.h>`, `<stdlib.h>`, `<inttypes.h>`
 and `<ctype.h>` (whose functions 10.0 has only as macros), and a `<fenv.h>`
-and `<wchar.h>` with the types. clang searches `usr/local/include` first,
-and each header includes the system's. Link with `-lc99`.
+and `<wchar.h>` with the types. Other headers declare what libSystem
+has but the 10.0 headers do not (`nanosleep`, `tzname`, `malloc_size`),
+give the types they lack (`socklen_t`, `useconds_t`), give C linkage to
+`<mach-o/dyld.h>`, `<mach/mach_time.h>`, `<sched.h>` and
+`<crt_externs.h>`, and add an `<AvailabilityMacros.h>` and an
+`<alloca.h>`. clang searches `usr/local/include` first, and each header
+includes the system's. Link with `-lc99`.
+
+`fix-macosx-10.0-headers.sh` also fixes the `extern "Objective-C"` block
+of `<NSJavaSetup.h>` and gives C linkage to `FOUNDATION_EXPORT` and
+`APPKIT_EXTERN`, so that Objective-C++ code links to Foundation and
+AppKit.
 
 clang itself accepts 10.0's `typedef int wchar_t` in `<stdlib.h>`, which
 C++ would reject, in system headers.
@@ -222,10 +245,14 @@ There was no SDK for 10.0; the files come from three places:
   (`Developer.pax.gz` in its `Developer.pkg`),
 - `usr/lib/crt1.o`, `dylib1.o`, `bundle1.o`, `gcrt1.o` and
   `System/Library/Frameworks` from `Essentials.pax.gz` on the install CD,
-- the framework binaries and their `Versions/Current` links, and
-  `usr/lib/libobjc.A.dylib`, from an installed 10.0 system (the guest
-  image's HFS+ partition, read with `7z x`). Essentials.pax.gz has only the
-  framework headers, so without them Objective-C programs don't link.
+- the framework binaries and their `Versions/Current` links,
+  `System/Library/PrivateFrameworks` and the dylibs of `usr/lib`
+  (`libobjc.A.dylib` and the others), from an installed 10.0 system (the
+  guest image's HFS+ partition, read with `7z x`). Essentials.pax.gz has
+  only the framework headers, so without them Objective-C programs don't
+  link. 7z writes symbolic links as small files that hold the target;
+  make them links again. ld64 reads the libraries that each framework
+  uses, so they must all be there.
 - `usr/lib/libSystem.B.dylib` and `libSystem.dylib` from the root of the
   install CD.
 
