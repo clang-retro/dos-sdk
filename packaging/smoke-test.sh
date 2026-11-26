@@ -20,6 +20,7 @@ HOSTRUN=${HOSTRUN:-}
 EMU2=${EMU2:-$(command -v emu2 || true)}
 WINE=${WINE:-$(command -v wine || true)}
 VAMOS=${VAMOS:-$(command -v vamos || true)}
+DOSBOX=${DOSBOX:-$(command -v dosbox || true)}
 OUT=${OUT:-$PWD/smoke-out}
 PY=${PYTHON:-python3}
 export WINEDEBUG=${WINEDEBUG:--all}
@@ -78,6 +79,14 @@ runirix() {
     skip=$((skip + 1))
   fi
 }
+# DOSBox runs the 32-bit DOS programs (DOS/32A is their stub).
+rundos32() {
+  if [ -n "$DOSBOX" ]; then
+    check "run $1" "$2" env DOSBOX="$DOSBOX" sh "$tools/dosbox-run.sh" "$3" smoke
+  else
+    skip=$((skip + 1))
+  fi
+}
 runwin() {
   if [ -n "$WINE" ]; then check "run $1" "$2" "$WINE" "$3" smoke; else skip=$((skip + 1)); fi
 }
@@ -114,6 +123,18 @@ for m in medium large huge huge16; do
 done
 build "dos-large-eh" dos-large-eh.exe $CXX --config=dos.cfg -mcmodel=large -Os -fexceptions -frtti except.cpp &&
   rundos "dos-large-eh" "caught boom, 1 destructor ran" dos-large-eh.exe
+
+echo "== 32-bit DOS (i386-pc-msdos)"
+build "dos32" dos32.exe $CC --config=dos32.cfg -Os hello.c &&
+  rundos32 "dos32" "Hello, world from smoke! 42 123456789 3.25" dos32.exe
+build "dos32-cxx" dos32-cxx.exe $CXX --config=dos32.cfg -Os hello.cpp &&
+  rundos32 "dos32-cxx" "Hello, world from smoke! 42" dos32-cxx.exe
+for t in libc:c hw:c cxx:cpp threads:cpp; do
+  n=${t%%:*} e=${t#*:}
+  case $e in c) cc=$CC ;; *) cc=$CXX ;; esac
+  build "dos32-$n" "dos32-$n.exe" $cc --config=dos32.cfg -O2 "$tools/dos32-tests/$n.$e" &&
+    rundos32 "dos32-$n" "PASS dos32 $n" "dos32-$n.exe"
+done
 
 echo "== 16-bit Windows (i8086-win16)"
 for v in win16 win31 win30 win2 win1; do
@@ -350,5 +371,5 @@ else
   skip=$((skip + 1))
 fi
 
-echo "== $pass passed, $fail failed, $skip runs skipped (no emu2, Wine, vamos, Hatari or qemu-irix)"
+echo "== $pass passed, $fail failed, $skip runs skipped (no emu2, DOSBox, Wine, vamos, Hatari or qemu-irix)"
 [ "$fail" = 0 ]

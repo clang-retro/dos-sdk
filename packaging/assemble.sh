@@ -72,6 +72,9 @@ fi
 cp "$here"/cfg/*.cfg "$WIN16_SDK"/cfg/*.cfg "$WIN32_SDK"/cfg/*.cfg "$out/bin/"
 
 cp -R "$SYSROOTS/i8086-msdos" "$out/i8086-msdos"
+# 32-bit DOS: the sysroot next to bin, with the DOS/32A extender in it.
+cp -R "$SYSROOTS/i386-msdos" "$out/i386-msdos"
+cp "$SYSROOTS/i386-msdos/share/licenses/DOS32A-license.txt" "$out/share/licenses/"
 # The driver looks for the AmigaOS sysroot next to bin, as for DOS.
 cp -R "$SYSROOTS/m68k-amigaos" "$out/m68k-amigaos"
 cp -R "$SYSROOTS/m68k-atari-tos" "$out/m68k-atari-tos"
@@ -168,6 +171,11 @@ done
 
 cp -R "$here/examples" "$out/examples"
 cp "$here/smoke-test.sh" "$here/README.md" "$out/"
+# DOSBox runs the 32-bit DOS programs: the runner and the tests.
+cp "$here/dosbox-run.sh" "$out/share/clang-dos/"
+mkdir -p "$out/share/clang-dos/dos32-tests"
+cp "$sdk"/tests/dos32/* "$out/share/clang-dos/dos32-tests/"
+cp "$sdk/docs/dos32.md" "$out/share/clang-dos/docs/"
 if [ -n "${BRANCHES:-}" ]; then cp "$BRANCHES" "$out/BRANCHES.txt"; fi
 
 cp "$sdk/LICENSE" "$out/share/licenses/dos-sdk-LICENSE"

@@ -115,6 +115,9 @@ env:
   MINGW_SHA: 7ce22f6637cc93fd2eb37c8a645908c92bb80bbd
   LIBUNICOWS_URL: https://downloads.sourceforge.net/project/libunicows/libunicows/1.1.2/libunicows-1.1.2-src.tar.gz
   LIBUNICOWS_SHA256: 4371837276fde33b5684556f4c8e37c348b330c2981d99626300c25b4d876a06
+  # DOS/32A, the DOS extender that the i386-msdos programs carry as their stub.
+  DOS32A_URL: https://downloads.sourceforge.net/project/dos32a/DOS_32A%20v7.35/DOS_32A%20DOS%20Extender/dos32a-735-bin.zip
+  DOS32A_SHA256: 1b16a3cd147fd5f478d119d50acc33b2f95cd9f157814d83d99f9742f34e10c4
   # GCC, for libstdc++ in the Windows sysroots (win32-sdk's
   # scripts/build-libstdcxx.sh compiles it with clang).
   GCC_VERSION: '15.2.0'
@@ -343,7 +346,7 @@ jobs:
       matrix:
         include:
           - group: dos
-            names: i8086-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix sparc-sun-solaris i386-pc-solaris i386-unknown-freebsd i386-unknown-netbsd
+            names: i8086-msdos i386-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix sparc-sun-solaris i386-pc-solaris i386-unknown-freebsd i386-unknown-netbsd
             source: picolibc
             winsdk: win16-sdk
           - group: windows
@@ -486,6 +489,11 @@ jobs:
           curl -sSfL --retry 5 -o sdk104u.tar.xz "$MACOSX_SDK_URL"
           echo "$MACOSX_SDK_SHA256  sdk104u.tar.xz" | sha256sum -c
           mkdir macosx-sdk && tar -C macosx-sdk -xJf sdk104u.tar.xz && rm sdk104u.tar.xz
+      - name: Get DOS/32A
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.group == 'dos'
+        run: |
+          curl -sSfL --retry 5 -o dos32a-735-bin.zip "$DOS32A_URL"
+          echo "$DOS32A_SHA256  dos32a-735-bin.zip" | sha256sum -c
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -495,7 +503,7 @@ jobs:
             MINGW_SRC=$PWD/mingw-w64 LIBUNICOWS_SRC=$PWD/libunicows WORK=$PWD/work-$name \
             GCC_SRC=$([ -d gcc ] && echo "$PWD/gcc") \
             WIN16_SDK=$PWD/win16-sdk WIN32_SDK=$PWD/win32-sdk AMIGA_SDK=$PWD/amiga-sdk ATARI_SDK=$PWD/atari-sdk \
-            UNIX_SDK=$PWD/unix-sdk MACOSX_SDK=$PWD/macosx-sdk/MacOSX10.4u.sdk \
+            UNIX_SDK=$PWD/unix-sdk MACOSX_SDK=$PWD/macosx-sdk/MacOSX10.4u.sdk DOS32A_ZIP=$PWD/dos32a-735-bin.zip \
               sh sdk/packaging/build-sysroot.sh "$name" "sysroot-$name/sysroot"
             tar -cf "sysroot-$name.tar" -C "sysroot-$name" sysroot
             rm -rf "work-$name" "sysroot-$name"
@@ -737,12 +745,15 @@ jobs:
           export WINEDEBUG=-all
           xvfb-run -a wineboot --init
           wineserver -w
+      # DOSBox runs the 32-bit DOS programs (emu2 has no DPMI host).
+      - name: Install DOSBox
+        run: sudo apt-get install -y -q --no-install-recommends dosbox
       - name: Smoke test
         run: |
           pkg=$PWD/smoke/clang-dos-${{ matrix.host }}-x86_64
           hostrun=; [ ${{ matrix.host }} = windows ] && hostrun=wine
           cc -O2 -o bsdrun unix-sdk/bsd/tools/bsdrun.c
-          HOSTRUN=$hostrun EMU2=$PWD/emu2/emu2 WINE=wine VAMOS=vamos QEMU_IRIX_DIR=$PWD/qemu-irix BSDRUN=$PWD/bsdrun OUT=$PWD/smoke-out \
+          HOSTRUN=$hostrun EMU2=$PWD/emu2/emu2 DOSBOX=dosbox WINE=wine VAMOS=vamos QEMU_IRIX_DIR=$PWD/qemu-irix BSDRUN=$PWD/bsdrun OUT=$PWD/smoke-out \
             xvfb-run -a sh "$pkg/smoke-test.sh" 2>&1 | tee smoke.log
       - uses: actions/upload-artifact@v4
         if: failure()
