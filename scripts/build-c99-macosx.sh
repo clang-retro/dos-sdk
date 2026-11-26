@@ -18,7 +18,22 @@
 #     call the double functions,
 #   - the <fenv.h> functions, from picolibc,
 #   - llabs, lldiv, atoll, strtoll, strtoull, strtof, strtold, _Exit and
-#     the <inttypes.h> functions, on the BSD strtoq and strtouq.
+#     the <inttypes.h> functions, on the BSD strtoq and strtouq,
+#   - the <wchar.h> and <wctype.h> functions (10.0 to 10.2 have none):
+#     UTF-8, and the character classes of ASCII and Latin-1,
+#   - dlopen and the others (10.0 to 10.2), over dyld's NS... functions,
+#   - recursive mutexes for 10.0 and 10.1 (see include/pthread.h),
+#   - localtime_r, gmtime_r, timegm, strerror_r, the getpw/getgr _r
+#     functions, getsid, pread, pwrite, poll, ftime, __cxa_atexit,
+#     _NSGetExecutablePath and the OSSpinLock functions, where the
+#     system lacks them (src/posix.c),
+#   - inet_pton and inet_ntop for IPv4 and IPv6 (10.0 and 10.1),
+#   - headers that declare what the system library has but the 10.0
+#     headers do not (nanosleep, tzname, malloc_size, alloca), the types they lack
+#     (socklen_t, useconds_t, suseconds_t), C linkage for system headers
+#     that lack it (mach-o/dyld.h, mach/mach_time.h, sched.h,
+#     crt_externs.h), and an <AvailabilityMacros.h> (10.0 and 10.1 have
+#     none).
 # It takes nothing from picolibc that the system library already has.
 #
 # The headers go to SYSROOT/usr/local/include, which clang searches before
@@ -58,17 +73,23 @@ python3 -I "$here/select-objects.py" "$(command -v "$NM")" "$dylib" $libm \
 objs=$(sed -n 1p "$WORK/selected")
 nodefs=$(sed -n 2p "$WORK/selected" | sed 's/[^ ][^ ]*/-DNO_&/g')
 
-# Our own part, against the system headers and ours.
+# Our own part, against the system headers and ours. A function under
+# "#ifndef HAVE_name" is left out when the system library has it.
+have=$("$NM" -gU "$dylib" | awk '{print $3}' | sed -n 's/^_//p' | sort -u)
+haves=
+for f in $(sed -n 's/^#ifndef HAVE_\(.*\)$/\1/p' "$here"/src/*.c | sort -u); do
+  if echo "$have" | grep -qx "$f"; then haves="$haves -DHAVE_$f"; fi
+done
 mkdir -p "$WORK/own"
-for f in fenv long-double stdlib; do
+for f in fenv long-double stdlib wchar posix dlfcn pthread inet; do
   # shellcheck disable=SC2086
   "$BIN/clang" --target=$target -isysroot "$SYSROOT" -isystem "$here/include" \
-    -mcpu=750 -O2 -Wall $nodefs -c "$here/src/$f.c" -o "$WORK/own/$f.o"
+    -mcpu=750 -O2 -Wall $nodefs $haves -c "$here/src/$f.c" -o "$WORK/own/$f.o"
 done
 
 mkdir -p "$SYSROOT/usr/local/lib" "$SYSROOT/usr/local/include"
 # shellcheck disable=SC2086
 "$LIBTOOL" -static -no_warning_for_no_symbols -o "$SYSROOT/usr/local/lib/libc99.a" \
   $objs "$WORK"/own/*.o
-cp "$here"/include/*.h "$SYSROOT/usr/local/include/"
+cp -R "$here"/include/. "$SYSROOT/usr/local/include/"
 echo "installed $SYSROOT/usr/local/lib/libc99.a and its headers"
