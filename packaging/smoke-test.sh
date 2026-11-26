@@ -266,6 +266,22 @@ for v in win32-picolibc nt31-picolibc; do
   done
 done
 
+# A DLL that LoadLibrary loads gets native TLS only on Vista and later;
+# win32-picolibc-emutls.cfg builds one with emulated TLS and no TLS
+# directory. The program that loads it uses native TLS.
+if [ -f "$PKG/bin/win32-picolibc-emutls.cfg" ]; then
+  if build win32-picolibc-tlsdll tlsdll.dll $CXX --config=win32-picolibc-emutls.cfg -O2 -shared tlsdll.cpp; then
+    nocrt win32-picolibc-tlsdll tlsdll.dll
+    if "$PKG/bin/llvm-readobj" --coff-tls-directory tlsdll.dll | grep -q AddressOfCallBacks; then
+      bad "no TLS directory win32-picolibc-tlsdll" /dev/null
+    else
+      ok "no TLS directory win32-picolibc-tlsdll"
+    fi
+    build win32-picolibc-tlsload tlsload.exe $CXX --config=win32-picolibc.cfg -O2 tlsload.cpp &&
+      runwin win32-picolibc-tlsload "tls dll ok" tlsload.exe
+  fi
+fi
+
 echo "== Windows Vista, 7, 8, 8.1, 10 (32 and 64-bit)"
 for v in vista win7 win8 win81 win10 vista-x64 win7-x64 win8-x64 win81-x64 win10-x64; do
   build "$v" "$v.exe" $CC --config=$v.cfg -O2 hello.c &&
