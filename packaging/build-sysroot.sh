@@ -19,6 +19,8 @@
 #                   i386-pc-solaris    Solaris 2.5 to 11.4, 32-bit x86
 #                   i386-unknown-freebsd  FreeBSD 3.0 and later, 32-bit x86
 #                   i386-unknown-netbsd   NetBSD 1.5 and later, 32-bit x86
+#                   i386-pc-sco     SCO UnixWare 2 and later and OpenServer 5
+#                                   and later, 32-bit x86
 #                   macosx10.4      Mac OS X 10.4 and later, PowerPC and
 #                                   Intel: fat libc++, libc++abi, libunwind
 #                                   and the builtins (lib/darwin). Nothing
@@ -33,7 +35,8 @@
 #   AMIGA_SDK       clang-dos/amiga-sdk checkout (m68k-amigaos)
 #   ATARI_SDK       clang-dos/atari-sdk checkout (m68k-atari-tos)
 #   UNIX_SDK        clang-retro/unix-sdk checkout (mips-sgi-irix, Solaris,
-#                   FreeBSD)
+#                   FreeBSD, NetBSD)
+#   SCO_SDK         clang-retro/sco-sdk checkout (i386-pc-sco)
 #   TVISION_SRC     magiblot/tvision checkout (i8086-msdos, optional; see
 #                   tvision/README.md for the commit)
 #   WIN16_SDK       clang-dos/win16-sdk checkout (i8086-msdos: Windows 1.x-3.x)
@@ -114,6 +117,13 @@ i386-unknown-netbsd)
   : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${UNIX_SDK:?set UNIX_SDK}"
   export PICOLIBC_SRC
   BSD=netbsd sh "$UNIX_SDK/bsd/build-sysroot.sh" "$SYSROOT"
+  ;;
+i386-pc-sco)
+  # picolibc with its SCO layer and the builtins, for the i386, from
+  # sco-sdk. Nothing from SCO is in it.
+  : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${SCO_SDK:?set SCO_SDK}"
+  export PICOLIBC_SRC
+  sh "$SCO_SDK/build-sysroot.sh" "$SYSROOT"
   ;;
 macosx10.4)
   : "${MACOSX_SDK:?set MACOSX_SDK}"

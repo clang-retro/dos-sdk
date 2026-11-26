@@ -58,6 +58,7 @@ triple, the sysroot and the linker. Pass it with `--config=NAME.cfg`:
 | Solaris 2.5 to 11.4, x86 | `solarisx86.cfg` | `i386-pc-solaris -march=i486` | ELF, static, picolibc |
 | FreeBSD 3.0 and later, x86 | `freebsd.cfg` | `i386-unknown-freebsd -march=i486` | ELF, static, picolibc |
 | NetBSD 1.5 and later, x86 | `netbsd.cfg` | `i386-unknown-netbsd -march=i486` | ELF, static, picolibc |
+| SCO UnixWare 2 and later, OpenServer 5 and later, x86 | `sco.cfg` | `i386-pc-sco` (the i386) | SVR4 ELF, static, picolibc |
 
 The DOS and Win16 targets need no config file: `--target=i8086-pc-msdos`
 (or `i8086-pc-win16...`) is enough, since clang finds the sysroot in
@@ -345,13 +346,31 @@ clang --config=netbsd.cfg -march=pentium4 -O2 hello.c -o hello  # Pentium 4 and 
   run on NetBSD 1.5 and later.
 - bsdrun (above) runs them on x86 Linux too.
 
+## SCO UnixWare and OpenServer
+
+```sh
+clang --config=sco.cfg -O2 hello.c -o hello                 # i386 and later
+clang --config=sco.cfg -march=i486 -O2 hello.c -o hello     # i486 and later
+```
+
+- The sysroot is `i386-pc-sco/`, which clang's SCO driver finds next to
+  `bin/` by itself (`usr/include`, `usr/lib`), with picolibc and its SCO
+  layer and compiler-rt's builtins. Nothing in it comes from SCO.
+- `ld.lld` links static SVR4 ELF executables at 0x8048000, which run on
+  both UnixWare and OpenServer. The code is x87: these systems don't save
+  SSE registers before UnixWare 7.1.3 and OpenServer 5.0.7.
+- `share/clang-dos/scorun.c` builds (with a Linux `cc`) a tool that runs
+  them on x86 Linux; programs are tested there. Details, and what the C
+  library does differently on SCO, are in
+  `share/clang-dos/docs/sco-README.md`.
+
 ## Checking the package
 
 `smoke-test.sh` builds `examples/` for every target above and checks the
 results with `ne-check.py` and `check-imports.py`. With
 [emu2](https://github.com/dmsc/emu2), Wine and vamos (`pip install amitools
 machine68k==0.3.0`) on `PATH` (or `EMU2=`, `WINE=` and `VAMOS=`), and
-Hatari with `EMUTOS_DIR` set, and qemu-irix (with qemu-solaris and qemu-solarisx86) in `QEMU_IRIX_DIR`, and bsdrun in `BSDRUN`, it runs
+Hatari with `EMUTOS_DIR` set, and qemu-irix (with qemu-solaris and qemu-solarisx86) in `QEMU_IRIX_DIR`, and bsdrun and scorun in `BSDRUN` and `SCORUN`, it runs
 them too:
 
 ```sh
@@ -360,9 +379,9 @@ HOSTRUN=wine sh smoke-test.sh             # Windows package, from Linux with Win
 ```
 
 Every program is tested only in emu2, Wine, Amiga emulators, Hatari,
-qemu-irix and bsdrun; none has run on real DOS, Windows 1.x-3.x, Win32s,
-NT 3.x, 9x, 2000, XP, later Windows, Amiga, Atari, SGI, Sun, FreeBSD or NetBSD
-machines yet.
+qemu-irix, bsdrun and scorun; none has run on real DOS, Windows 1.x-3.x,
+Win32s, NT 3.x, 9x, 2000, XP, later Windows, Amiga, Atari, SGI, Sun,
+FreeBSD, NetBSD or SCO machines yet.
 
 ## Contents
 
@@ -385,11 +404,12 @@ sparc-sun-solaris/ Solaris sysroot: picolibc and builtins for 32-bit SPARC (V8)
 i386-pc-solaris/   Solaris sysroot: picolibc and builtins for 32-bit x86 (i486)
 i386-unknown-freebsd/ FreeBSD sysroot: picolibc and builtins for 32-bit x86 (i486)
 i386-unknown-netbsd/  NetBSD sysroot: the same, for NetBSD
+i386-pc-sco/          SCO sysroot: picolibc and builtins for 32-bit x86 (i386)
 share/clang-dos/   ne-check.py, check-imports.py, win16-imports.py, build-modern-sysroot.sh,
                    amiga-ndk.py (with lha.py, fd2stub.py), amiga-examples/,
                    hatari-run.sh, atari-examples/, build-qemu-irix.sh,
                    import-irix.sh, irix-examples/, solaris-examples/,
-                   bsdrun.c, bsd-examples/, docs/
+                   bsdrun.c, bsd-examples/, scorun.c, sco-examples/, docs/
 examples/          hello.c, hello.cpp, except.cpp, threads.cpp, curses.c, smoke.odl
 BRANCHES.txt       the source branches and commits this was built from
 ```

@@ -21,6 +21,8 @@
 #   UNIX_SDK      clang-retro/unix-sdk checkout (IRIX examples, qemu-irix and
 #                 import scripts, README); optional, with the mips-sgi-irix
 #                 sysroot
+#   SCO_SDK       clang-retro/sco-sdk checkout (scorun, examples, README);
+#                 optional, with the i386-pc-sco sysroot
 #   BRANCHES      optional: BRANCHES.txt to include
 set -e
 host=${1:?usage: assemble.sh linux|windows OUTDIR} out=${2:?}
@@ -85,6 +87,10 @@ for b in freebsd netbsd; do
     bsd=1; cp -R "$SYSROOTS/i386-unknown-$b" "$out/i386-unknown-$b"
   fi
 done
+sco=
+if [ -n "${SCO_SDK:-}" ] && [ -d "$SYSROOTS/i386-pc-sco" ]; then
+  sco=1; cp -R "$SYSROOTS/i386-pc-sco" "$out/i386-pc-sco"
+fi
 if [ -n "${UNIX_SDK:-}" ]; then
   for t in sparc-sun-solaris i386-pc-solaris; do
     if [ -d "$SYSROOTS/$t" ]; then solaris=1; cp -R "$SYSROOTS/$t" "$out/$t"; fi
@@ -159,7 +165,13 @@ if [ -n "$bsd" ]; then
   cp "$UNIX_SDK/bsd/tools/bsdrun.c" "$out/share/clang-dos/"
   cp "$UNIX_SDK/bsd/README.md" "$out/share/clang-dos/docs/bsd-README.md"
 fi
-for os in msdos amigaos tos irix solaris bsd; do
+if [ -n "$sco" ]; then
+  mkdir -p "$out/share/clang-dos/sco-examples"
+  cp "$SCO_SDK"/examples/*.c "$out/share/clang-dos/sco-examples/"
+  cp "$SCO_SDK/tools/scorun.c" "$out/share/clang-dos/"
+  cp "$SCO_SDK/README.md" "$out/share/clang-dos/docs/sco-README.md"
+fi
+for os in msdos amigaos tos irix solaris bsd sco; do
   if [ -f "$PICOLIBC_SRC/libos/$os/README.md" ]; then
     cp "$PICOLIBC_SRC/libos/$os/README.md" \
       "$out/share/clang-dos/docs/picolibc-$os-README.md"
@@ -182,6 +194,7 @@ for s in win16-sdk:$WIN16_SDK win32-sdk:$WIN32_SDK; do
 done
 cp "$ATARI_SDK/LICENSE" "$out/share/licenses/atari-sdk-LICENSE"
 if [ -n "$irix$solaris$bsd" ]; then cp "$UNIX_SDK/LICENSE" "$out/share/licenses/unix-sdk-LICENSE"; fi
+if [ -n "$sco" ]; then cp "$SCO_SDK/LICENSE" "$out/share/licenses/sco-sdk-LICENSE"; fi
 cp "$LLVM_SRC/llvm/LICENSE.TXT" "$out/share/licenses/LLVM-LICENSE.TXT"
 cp "$PICOLIBC_SRC/COPYING.picolibc" "$out/share/licenses/" 2>/dev/null || true
 cp "$JWLINK_SRC/Ver/license.txt" "$out/share/licenses/JWlink-OWPL.txt" 2>/dev/null || true
