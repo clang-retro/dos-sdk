@@ -23,6 +23,7 @@
 #                   i386-unknown-netbsd   NetBSD 1.5 and later, 32-bit x86
 #                   i386-pc-sco     SCO UnixWare 2 and later and OpenServer 5
 #                                   and later, 32-bit x86
+#                   powerpc-ibm-aix AIX 4.1 and later, 32-bit PowerPC
 #                   macosx10.4      Mac OS X 10.4 and later, PowerPC and
 #                                   Intel: fat libc++, libc++abi, libunwind
 #                                   and the builtins (lib/darwin). Nothing
@@ -40,6 +41,7 @@
 #   UNIX_SDK        clang-retro/unix-sdk checkout (mips-sgi-irix, Solaris,
 #                   FreeBSD, NetBSD)
 #   SCO_SDK         clang-retro/sco-sdk checkout (i386-pc-sco)
+#   AIX_SDK         clang-retro/aix-sdk checkout (powerpc-ibm-aix)
 #   TVISION_SRC     magiblot/tvision checkout (i8086-msdos, optional; see
 #                   tvision/README.md for the commit)
 #   WIN16_SDK       clang-dos/win16-sdk checkout (i8086-msdos: Windows 1.x-3.x)
@@ -132,6 +134,13 @@ i386-pc-sco)
   : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${SCO_SDK:?set SCO_SDK}"
   export PICOLIBC_SRC
   sh "$SCO_SDK/build-sysroot.sh" "$SYSROOT"
+  ;;
+powerpc-ibm-aix)
+  # picolibc with its AIX layer and the builtins, for the PowerPC 601,
+  # from aix-sdk, linked with xcoff-ld. Nothing from IBM is in it.
+  : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${AIX_SDK:?set AIX_SDK}"
+  export PICOLIBC_SRC
+  sh "$AIX_SDK/build-sysroot.sh" "$SYSROOT"
   ;;
 macosx10.4)
   : "${MACOSX_SDK:?set MACOSX_SDK}"
