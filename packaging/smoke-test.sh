@@ -12,6 +12,7 @@
 #   QEMU_IRIX_DIR=dir (qemu-irix, qemu-irixn32, qemu-irix64, qemu-solaris,
 #   qemu-solarisx86)
 #   BSDRUN=bsdrun (unix-sdk's, for FreeBSD and NetBSD programs; x86 Linux only)
+#   SCORUN=scorun (sco-sdk's, for UnixWare and OpenServer programs; x86 Linux only)
 #                                    runners for the outputs (optional)
 #   OUT=dir                          where to build (default: ./smoke-out)
 set -u
@@ -344,6 +345,22 @@ for b in freebsd:FreeBSD netbsd:NetBSD; do
       fi
   done
 done
+
+if [ -d "$PKG/i386-pc-sco" ]; then
+  echo "== SCO UnixWare and OpenServer (i386-pc-sco)"
+  # scorun runs static i386 SCO programs on Linux.
+  for c in i386: i486:-march=i486; do
+    n=sco-${c%%:*}
+    build "$n" "$n" $CC --config=sco.cfg ${c#*:} -O2 hello.c &&
+      if [ -n "${SCORUN:-}" ]; then
+        # A Windows-hosted linker (under Wine) leaves off the mode bits.
+        chmod +x "$n"
+        check "run $n" "Hello, world from smoke! 42 123456789 3.25" "$SCORUN" "./$n" smoke
+      else
+        skip=$((skip + 1))
+      fi
+  done
+fi
 
 echo "== Windows kernel-mode drivers and VxDs"
 # The test driver with every *-ddk.cfg, checked and (in a 32-bit and the
