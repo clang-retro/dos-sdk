@@ -43,6 +43,7 @@ nav:
       - Calling conventions and interrupts: dos/conventions.md
       - C++: dos/cxx.md
       - Files and random numbers: dos/files.md
+      - 32-bit DOS programs: dos32.md
   - Full-screen libraries:
       - Graphics, console and windows: graphics-and-tui.md
       - CXL and TCXL: cxl.md

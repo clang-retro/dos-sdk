@@ -121,6 +121,9 @@ env:
   MINGW_SHA: 7ce22f6637cc93fd2eb37c8a645908c92bb80bbd
   LIBUNICOWS_URL: https://downloads.sourceforge.net/project/libunicows/libunicows/1.1.2/libunicows-1.1.2-src.tar.gz
   LIBUNICOWS_SHA256: 4371837276fde33b5684556f4c8e37c348b330c2981d99626300c25b4d876a06
+  # DOS/32A, the DOS extender that the i386-msdos programs carry as their stub.
+  DOS32A_URL: https://downloads.sourceforge.net/project/dos32a/DOS_32A%20v7.35/DOS_32A%20DOS%20Extender/dos32a-735-bin.zip
+  DOS32A_SHA256: 1b16a3cd147fd5f478d119d50acc33b2f95cd9f157814d83d99f9742f34e10c4
   # GCC, for libstdc++ in the Windows sysroots (win32-sdk's
   # scripts/build-libstdcxx.sh compiles it with clang).
   GCC_VERSION: '15.2.0'
@@ -263,7 +266,7 @@ jobs:
           ref: ${{ steps.refs.outputs.jwlink }}
           path: jwlink
           persist-credentials: false
-      - run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends gcc-mingw-w64-i686 g++-mingw-w64-i686
+      - run: sh "$GITHUB_WORKSPACE/sdk/.github/scripts/apt-install.sh" gcc-mingw-w64-i686 g++-mingw-w64-i686
       - name: Build JWlink
         run: |
           JWLINK_SRC=$PWD/jwlink sh sdk/packaging/build-jwlink.sh linux out/jwlink
@@ -354,7 +357,7 @@ jobs:
       matrix:
         include:
           - group: dos
-            names: i8086-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix sparc-sun-solaris i386-pc-solaris i386-unknown-freebsd i386-unknown-netbsd i386-pc-sco
+            names: i8086-msdos i386-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix sparc-sun-solaris i386-pc-solaris i386-unknown-freebsd i386-unknown-netbsd i386-pc-sco
             source: picolibc
             winsdk: win16-sdk
           - group: windows
@@ -425,8 +428,7 @@ jobs:
       - name: Install build tools
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          sudo apt-get update -q
-          sudo apt-get install -y -q --no-install-recommends ninja-build cmake meson nasm make
+          sh "$GITHUB_WORKSPACE/sdk/.github/scripts/apt-install.sh" ninja-build cmake meson nasm make
       - uses: actions/download-artifact@v4
         if: steps.cache.outputs.cache-hit != 'true'
         with:
@@ -498,12 +500,17 @@ jobs:
       - name: Get cctools and the Mac OS X 10.4u SDK
         if: steps.cache.outputs.cache-hit != 'true' && matrix.source == 'macosx'
         run: |
-          sudo apt-get install -y -q --no-install-recommends automake autoconf libtool uuid-dev libssl-dev
+          sh "$GITHUB_WORKSPACE/sdk/.github/scripts/apt-install.sh" automake autoconf libtool uuid-dev libssl-dev
           PREFIX=$PWD/cctools-ppc sh sdk/scripts/build-cctools-ppc.sh >cctools.log 2>&1 || { tail -50 cctools.log; exit 1; }
           echo "$PWD/cctools-ppc/bin" >> "$GITHUB_PATH"
           curl -sSfL --retry 5 -o sdk104u.tar.xz "$MACOSX_SDK_URL"
           echo "$MACOSX_SDK_SHA256  sdk104u.tar.xz" | sha256sum -c
           mkdir macosx-sdk && tar -C macosx-sdk -xJf sdk104u.tar.xz && rm sdk104u.tar.xz
+      - name: Get DOS/32A
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.group == 'dos'
+        run: |
+          curl -sSfL --retry 5 -o dos32a-735-bin.zip "$DOS32A_URL"
+          echo "$DOS32A_SHA256  dos32a-735-bin.zip" | sha256sum -c
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -513,7 +520,7 @@ jobs:
             MINGW_SRC=$PWD/mingw-w64 LIBUNICOWS_SRC=$PWD/libunicows WORK=$PWD/work-$name \
             GCC_SRC=$([ -d gcc ] && echo "$PWD/gcc") \
             WIN16_SDK=$PWD/win16-sdk WIN32_SDK=$PWD/win32-sdk AMIGA_SDK=$PWD/amiga-sdk ATARI_SDK=$PWD/atari-sdk \
-            UNIX_SDK=$PWD/unix-sdk SCO_SDK=$PWD/sco-sdk MACOSX_SDK=$PWD/macosx-sdk/MacOSX10.4u.sdk \
+            UNIX_SDK=$PWD/unix-sdk SCO_SDK=$PWD/sco-sdk MACOSX_SDK=$PWD/macosx-sdk/MacOSX10.4u.sdk DOS32A_ZIP=$PWD/dos32a-735-bin.zip \
               sh sdk/packaging/build-sysroot.sh "$name" "sysroot-$name/sysroot"
             tar -cf "sysroot-$name.tar" -C "sysroot-$name" sysroot
             rm -rf "work-$name" "sysroot-$name"
@@ -686,7 +693,7 @@ jobs:
           if [ ${{ matrix.host }} = linux ]; then
             tar -cf - "$name" | xz -T0 -9 > "$name.tar.xz"
           else
-            sudo apt-get install -y -q --no-install-recommends p7zip-full zip >/dev/null
+            sh "$GITHUB_WORKSPACE/sdk/.github/scripts/apt-install.sh" p7zip-full zip >/dev/null
             zip -qr -9 "$name.zip" "$name"
             7z a -bd -mx=9 "$name.7z" "$name" >/dev/null
           fi
@@ -701,8 +708,7 @@ jobs:
       - name: Install Wine
         run: |
           sudo dpkg --add-architecture i386
-          sudo apt-get update -q
-          sudo apt-get install -y -q --no-install-recommends wine wine32:i386 wine64 xvfb xauth
+          sh "$GITHUB_WORKSPACE/sdk/.github/scripts/apt-install.sh" wine wine32:i386 wine64 xvfb xauth
           wine --version
       # vamos (from amitools) runs AmigaOS CLI programs without a Kickstart ROM.
       # amitools 0.9.0 does not start with machine68k 0.3.0; keep 0.8.1.
@@ -715,7 +721,7 @@ jobs:
       # ROM is used.
       - name: Install Hatari and EmuTOS
         run: |
-          sudo apt-get install -y -q --no-install-recommends hatari
+          sh "$GITHUB_WORKSPACE/sdk/.github/scripts/apt-install.sh" hatari
           mkdir -p "$RUNNER_TEMP/emutos" && cd "$RUNNER_TEMP/emutos"
           for z in 192k:$EMUTOS_192K_SHA256 512k:$EMUTOS_512K_SHA256; do
             f=emutos-${z%%:*}-$EMUTOS_VERSION.zip
@@ -734,7 +740,7 @@ jobs:
       - name: Build qemu-irix
         if: steps.qemu-irix.outputs.cache-hit != 'true'
         run: |
-          sudo apt-get install -y -q --no-install-recommends pkg-config libglib2.0-dev libpixman-1-dev zlib1g-dev
+          sh "$GITHUB_WORKSPACE/sdk/.github/scripts/apt-install.sh" pkg-config libglib2.0-dev libpixman-1-dev zlib1g-dev
           WORK=$RUNNER_TEMP/build-qemu-irix sh unix-sdk/irix/tools/build-qemu-irix.sh qemu-irix
       - name: Get emu2
         id: emu2
@@ -762,13 +768,16 @@ jobs:
           export WINEDEBUG=-all
           xvfb-run -a wineboot --init
           wineserver -w
+      # DOSBox runs the 32-bit DOS programs (emu2 has no DPMI host).
+      - name: Install DOSBox
+        run: sh "$GITHUB_WORKSPACE/sdk/.github/scripts/apt-install.sh" dosbox
       - name: Smoke test
         run: |
           pkg=$PWD/smoke/clang-dos-${{ matrix.host }}-x86_64
           hostrun=; [ ${{ matrix.host }} = windows ] && hostrun=wine
           cc -O2 -o bsdrun unix-sdk/bsd/tools/bsdrun.c
           cc -O2 -o scorun sco-sdk/tools/scorun.c
-          HOSTRUN=$hostrun EMU2=$PWD/emu2/emu2 WINE=wine VAMOS=vamos QEMU_IRIX_DIR=$PWD/qemu-irix BSDRUN=$PWD/bsdrun SCORUN=$PWD/scorun OUT=$PWD/smoke-out \
+          HOSTRUN=$hostrun EMU2=$PWD/emu2/emu2 DOSBOX=dosbox WINE=wine VAMOS=vamos QEMU_IRIX_DIR=$PWD/qemu-irix BSDRUN=$PWD/bsdrun SCORUN=$PWD/scorun OUT=$PWD/smoke-out \
             xvfb-run -a sh "$pkg/smoke-test.sh" 2>&1 | tee smoke.log
       - uses: actions/upload-artifact@v4
         if: failure()

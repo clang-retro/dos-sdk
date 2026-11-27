@@ -4,6 +4,8 @@
 #   packaging/build-sysroot.sh NAME OUTPUT
 #
 #   NAME            i8086-msdos     DOS and Win16, every memory model
+#                   i386-msdos      32-bit DOS (LE programs with the DOS/32A
+#                                   extender as the stub), with libc++
 #                   win9x-msvcrt    95/98/ME and NT 4.0 (msvcrt.dll), libunicows
 #                   win9x-crtdll    NT 3.x, Win32s and bare 95 (crtdll.dll)
 #                   win2k-xp        2000/XP with libc++, libc++abi, libunwind
@@ -29,6 +31,7 @@
 #   OUTPUT          the sysroot directory
 #   BIN             directory with clang, llvm-ar and so on (and jwlink)
 #   LLVM_SRC        clang-dos/llvm checkout
+#   DOS32A_ZIP      dos32a-735-bin.zip, the DOS/32A extender (i386-msdos)
 #   PICOLIBC_SRC    clang-dos/picolibc checkout (i8086-msdos, m68k-amigaos,
 #                   m68k-atari-tos, mips-sgi-irix, the Solaris ones,
 #                   win32-picolibc)
@@ -65,6 +68,11 @@ i8086-msdos)
   : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${WIN16_SDK:?set WIN16_SDK}"
   export PICOLIBC_SRC WIN16_SDK MSDOS_LD=${MSDOS_LD:-$BIN/jwlink}
   sh "$sdk/scripts/build-sysroot.sh"
+  ;;
+i386-msdos)
+  : "${PICOLIBC_SRC:?set PICOLIBC_SRC}" "${DOS32A_ZIP:?set DOS32A_ZIP}"
+  export PICOLIBC_SRC DOS32A_ZIP SYSROOT
+  sh "$sdk/scripts/build-sysroot-dos32.sh"
   ;;
 win9x-msvcrt|win9x-crtdll|win2k-xp|win32-picolibc|win-vista|win-vista-x64)
   : "${WIN32_SDK:?set WIN32_SDK}" "${MINGW_SRC:?set MINGW_SRC}"

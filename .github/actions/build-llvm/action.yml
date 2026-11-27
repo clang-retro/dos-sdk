@@ -74,13 +74,12 @@ runs:
       if: steps.install.outputs.cache-hit != 'true' && steps.prebuilt.outputs.found != 'true'
       shell: bash
       run: |
-        sudo apt-get update -q
         pkgs="ninja-build ccache cmake"
         case "${{ inputs.host }}" in
           linux) pkgs="$pkgs clang lld" ;;
           windows) pkgs="$pkgs g++-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix binutils-mingw-w64-x86-64" ;;
         esac
-        sudo apt-get install -y -q --no-install-recommends $pkgs
+        sh "$GITHUB_ACTION_PATH/../../scripts/apt-install.sh" $pkgs
 
     - name: Check out clang-dos/llvm
       if: steps.install.outputs.cache-hit != 'true' && steps.prebuilt.outputs.found != 'true'
