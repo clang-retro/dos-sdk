@@ -13,6 +13,7 @@
 #   qemu-solarisx86)
 #   BSDRUN=bsdrun (unix-sdk's, for FreeBSD and NetBSD programs; x86 Linux only)
 #   SCORUN=scorun (sco-sdk's, for UnixWare and OpenServer programs; x86 Linux only)
+#   AIXRUN=aixrun (aix-sdk's, for 32-bit AIX programs)
 #                                    runners for the outputs (optional)
 #   OUT=dir                          where to build (default: ./smoke-out)
 set -u
@@ -372,6 +373,21 @@ if [ -d "$PKG/i386-pc-sco" ]; then
         # A Windows-hosted linker (under Wine) leaves off the mode bits.
         chmod +x "$n"
         check "run $n" "Hello, world from smoke! 42 123456789 3.25" "$SCORUN" "./$n" smoke
+      else
+        skip=$((skip + 1))
+      fi
+  done
+fi
+
+if [ -d "$PKG/powerpc-ibm-aix" ]; then
+  echo "== AIX (powerpc-ibm-aix)"
+  # aixrun interprets static 32-bit AIX programs and emulates their /unix
+  # kernel calls.
+  for c in 601: 604:-mcpu=604; do
+    n=aix-${c%%:*}
+    build "$n" "$n" $CC --config=aix.cfg ${c#*:} -O2 hello.c &&
+      if [ -n "${AIXRUN:-}" ]; then
+        check "run $n" "Hello, world from smoke! 42 123456789 3.25" "$AIXRUN" "./$n" smoke
       else
         skip=$((skip + 1))
       fi

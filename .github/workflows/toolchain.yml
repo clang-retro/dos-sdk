@@ -1,6 +1,6 @@
 # Build the clang-dos toolchain packages (Linux and Windows hosts) from
 # clang-dos/llvm, picolibc, JWlink, win16-sdk, win32-sdk, amiga-sdk, atari-sdk,
-# unix-sdk, sco-sdk and this repository, and smoke-test them on every target in emu2,
+# unix-sdk, sco-sdk, aix-sdk and this repository, and smoke-test them on every target in emu2,
 # Wine, vamos, Hatari (with EmuTOS) and qemu-irix.
 #
 # It runs for pushes and pull requests here, and the other clang-dos
@@ -52,6 +52,9 @@ on:
       sco_sdk_ref:
         description: clang-retro/sco-sdk branch, tag or commit
         default: main
+      aix_sdk_ref:
+        description: clang-retro/aix-sdk branch, tag or commit
+        default: main
       windows:
         description: Build the Windows-hosted package too
         type: boolean
@@ -83,6 +86,9 @@ on:
         type: string
         default: main
       sco_sdk_ref:
+        type: string
+        default: main
+      aix_sdk_ref:
         type: string
         default: main
       sdk_ref:
@@ -175,6 +181,7 @@ jobs:
           ATARI_REF: ${{ inputs.atari_sdk_ref || 'main' }}
           UNIX_REF: ${{ inputs.unix_sdk_ref || 'main' }}
           SCO_REF: ${{ inputs.sco_sdk_ref || 'main' }}
+          AIX_REF: ${{ inputs.aix_sdk_ref || 'main' }}
           WINDOWS: ${{ inputs.windows }}
         run: |
           # A branch or tag name becomes the commit it names now, so that
@@ -198,6 +205,7 @@ jobs:
           atari=$(resolve clang-dos/atari-sdk "$ATARI_REF")
           unix=$(resolve clang-retro/unix-sdk "$UNIX_REF")
           sco=$(resolve clang-retro/sco-sdk "$SCO_REF")
+          aix=$(resolve clang-retro/aix-sdk "$AIX_REF")
           # Empty for a push or pull request here: both hosts.
           if [ "$WINDOWS" = false ]; then hosts='["linux"]'; else hosts='["linux","windows"]'; fi
           {
@@ -211,7 +219,8 @@ jobs:
             echo "atari=$atari"
             echo "unix=$unix"
             echo "sco=$sco"
-            echo "sources=llvm $llvm picolibc $picolibc jwlink $jwlink dos-sdk $sdk win16-sdk $win16 win32-sdk $win32 amiga-sdk $amiga atari-sdk $atari unix-sdk $unix sco-sdk $sco"
+            echo "aix=$aix"
+            echo "sources=llvm $llvm picolibc $picolibc jwlink $jwlink dos-sdk $sdk win16-sdk $win16 win32-sdk $win32 amiga-sdk $amiga atari-sdk $atari unix-sdk $unix sco-sdk $sco aix-sdk $aix"
             echo "hosts=$hosts"
           } | tee -a "$GITHUB_OUTPUT"
           {
@@ -230,6 +239,7 @@ jobs:
             echo "clang-dos/atari-sdk $atari  ($ATARI_REF)"
             echo "clang-retro/unix-sdk $unix  ($UNIX_REF)"
             echo "clang-retro/sco-sdk $sco  ($SCO_REF)"
+            echo "clang-retro/aix-sdk $aix  ($AIX_REF)"
             echo
             echo "Other sources:"
             echo "  mingw-w64 $MINGW_SHA (headers, CRT, import libraries)"
@@ -243,6 +253,7 @@ jobs:
             echo "ROM is included. The SGI IRIX sysroot comes from unix-sdk"
             echo "(picolibc for static programs); nothing from IRIX is included."
             echo "The SCO sysroot comes from sco-sdk; nothing from SCO is included."
+            echo "The AIX sysroot comes from aix-sdk; nothing from IBM is included."
             echo "Linux host: clang on Ubuntu 24.04, libstdc++ linked statically."
             echo "Windows host: mingw-w64 GCC (posix threads), linked statically."
           } > BRANCHES.txt
@@ -357,7 +368,7 @@ jobs:
       matrix:
         include:
           - group: dos
-            names: i8086-msdos i386-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix sparc-sun-solaris i386-pc-solaris i386-unknown-freebsd i386-unknown-netbsd i386-pc-sco
+            names: i8086-msdos i386-msdos m68k-amigaos m68k-atari-tos mips-sgi-irix sparc-sun-solaris i386-pc-solaris i386-unknown-freebsd i386-unknown-netbsd i386-pc-sco powerpc-ibm-aix
             source: picolibc
             winsdk: win16-sdk
           - group: windows
@@ -419,12 +430,19 @@ jobs:
           ref: ${{ needs.setup.outputs.sco }}
           path: sco-sdk
           persist-credentials: false
+      - uses: actions/checkout@v4
+        if: matrix.group == 'dos'
+        with:
+          repository: clang-retro/aix-sdk
+          ref: ${{ needs.setup.outputs.aix }}
+          path: aix-sdk
+          persist-credentials: false
       - name: Look for these sysroots in the cache
         id: cache
         uses: actions/cache@v4
         with:
           path: sysroot-*.tar
-          key: sysroots-${{ matrix.group }}-${{ needs.setup.outputs.llvm }}-${{ matrix.source == 'picolibc' && format('{0}-{1}-{2}-{3}-{4}', needs.setup.outputs.picolibc, env.TVISION_SHA, needs.setup.outputs.amiga, needs.setup.outputs.atari, format('{0}-{1}', needs.setup.outputs.unix, needs.setup.outputs.sco)) || (matrix.source == 'macosx' && env.MACOSX_SDK_SHA256 || format('{0}-gcc{1}', env.MINGW_SHA, env.GCC_VERSION)) }}-${{ matrix.picolibc && needs.setup.outputs.picolibc || 'none' }}-${{ matrix.winsdk == 'win16-sdk' && needs.setup.outputs.win16 || needs.setup.outputs.win32 }}-${{ hashFiles('sdk/scripts/**', 'sdk/runtime/**', 'sdk/graphics/**', 'sdk/tui/**', 'sdk/curses/**', 'sdk/cwin/**', 'sdk/cxl/**', 'sdk/tvision/**', 'sdk/packaging/build-sysroot.sh') }}
+          key: sysroots-${{ matrix.group }}-${{ needs.setup.outputs.llvm }}-${{ matrix.source == 'picolibc' && format('{0}-{1}-{2}-{3}-{4}', needs.setup.outputs.picolibc, env.TVISION_SHA, needs.setup.outputs.amiga, needs.setup.outputs.atari, format('{0}-{1}-{2}', needs.setup.outputs.unix, needs.setup.outputs.sco, needs.setup.outputs.aix)) || (matrix.source == 'macosx' && env.MACOSX_SDK_SHA256 || format('{0}-gcc{1}', env.MINGW_SHA, env.GCC_VERSION)) }}-${{ matrix.picolibc && needs.setup.outputs.picolibc || 'none' }}-${{ matrix.winsdk == 'win16-sdk' && needs.setup.outputs.win16 || needs.setup.outputs.win32 }}-${{ hashFiles('sdk/scripts/**', 'sdk/runtime/**', 'sdk/graphics/**', 'sdk/tui/**', 'sdk/curses/**', 'sdk/cwin/**', 'sdk/cxl/**', 'sdk/tvision/**', 'sdk/packaging/build-sysroot.sh') }}
       - name: Install build tools
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -520,7 +538,7 @@ jobs:
             MINGW_SRC=$PWD/mingw-w64 LIBUNICOWS_SRC=$PWD/libunicows WORK=$PWD/work-$name \
             GCC_SRC=$([ -d gcc ] && echo "$PWD/gcc") \
             WIN16_SDK=$PWD/win16-sdk WIN32_SDK=$PWD/win32-sdk AMIGA_SDK=$PWD/amiga-sdk ATARI_SDK=$PWD/atari-sdk \
-            UNIX_SDK=$PWD/unix-sdk SCO_SDK=$PWD/sco-sdk MACOSX_SDK=$PWD/macosx-sdk/MacOSX10.4u.sdk DOS32A_ZIP=$PWD/dos32a-735-bin.zip \
+            UNIX_SDK=$PWD/unix-sdk SCO_SDK=$PWD/sco-sdk AIX_SDK=$PWD/aix-sdk MACOSX_SDK=$PWD/macosx-sdk/MacOSX10.4u.sdk DOS32A_ZIP=$PWD/dos32a-735-bin.zip \
               sh sdk/packaging/build-sysroot.sh "$name" "sysroot-$name/sysroot"
             tar -cf "sysroot-$name.tar" -C "sysroot-$name" sysroot
             rm -rf "work-$name" "sysroot-$name"
@@ -619,6 +637,12 @@ jobs:
           ref: ${{ needs.setup.outputs.sco }}
           path: sco-sdk
           persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: clang-retro/aix-sdk
+          ref: ${{ needs.setup.outputs.aix }}
+          path: aix-sdk
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: llvm-${{ matrix.host }}
@@ -652,7 +676,7 @@ jobs:
           WIDL_DIR=$PWD/widl-bin/${{ matrix.host }} \
           LLVM_SRC=$PWD/llvm PICOLIBC_SRC=$PWD/picolibc JWLINK_SRC=$PWD/jwlink \
           WIN16_SDK=$PWD/win16-sdk WIN32_SDK=$PWD/win32-sdk AMIGA_SDK=$PWD/amiga-sdk ATARI_SDK=$PWD/atari-sdk \
-          UNIX_SDK=$PWD/unix-sdk SCO_SDK=$PWD/sco-sdk BRANCHES=$PWD/BRANCHES.txt \
+          UNIX_SDK=$PWD/unix-sdk SCO_SDK=$PWD/sco-sdk AIX_SDK=$PWD/aix-sdk BRANCHES=$PWD/BRANCHES.txt \
             sh sdk/packaging/assemble.sh ${{ matrix.host }} "dist/$name"
       # The headers of win16-sdk against Wine's .spec files and mingw-w64,
       # with the compiler and a Win32 sysroot of this package.
@@ -777,7 +801,8 @@ jobs:
           hostrun=; [ ${{ matrix.host }} = windows ] && hostrun=wine
           cc -O2 -o bsdrun unix-sdk/bsd/tools/bsdrun.c
           cc -O2 -o scorun sco-sdk/tools/scorun.c
-          HOSTRUN=$hostrun EMU2=$PWD/emu2/emu2 DOSBOX=dosbox WINE=wine VAMOS=vamos QEMU_IRIX_DIR=$PWD/qemu-irix BSDRUN=$PWD/bsdrun SCORUN=$PWD/scorun OUT=$PWD/smoke-out \
+          cc -O2 -o aixrun aix-sdk/tools/aixrun.c -lm
+          HOSTRUN=$hostrun EMU2=$PWD/emu2/emu2 DOSBOX=dosbox WINE=wine VAMOS=vamos QEMU_IRIX_DIR=$PWD/qemu-irix BSDRUN=$PWD/bsdrun SCORUN=$PWD/scorun AIXRUN=$PWD/aixrun OUT=$PWD/smoke-out \
             xvfb-run -a sh "$pkg/smoke-test.sh" 2>&1 | tee smoke.log
       - uses: actions/upload-artifact@v4
         if: failure()

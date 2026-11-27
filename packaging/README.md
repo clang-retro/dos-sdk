@@ -59,6 +59,7 @@ triple, the sysroot and the linker. Pass it with `--config=NAME.cfg`:
 | FreeBSD 3.0 and later, x86 | `freebsd.cfg` | `i386-unknown-freebsd -march=i486` | ELF, static, picolibc |
 | NetBSD 1.5 and later, x86 | `netbsd.cfg` | `i386-unknown-netbsd -march=i486` | ELF, static, picolibc |
 | SCO UnixWare 2 and later, OpenServer 5 and later, x86 | `sco.cfg` | `i386-pc-sco` (the i386) | SVR4 ELF, static, picolibc |
+| AIX 4.1 and later, 32-bit PowerPC | `aix.cfg` | `powerpc-ibm-aix4.3` (the 601) | XCOFF, static, picolibc |
 
 The DOS and Win16 targets need no config file: `--target=i8086-pc-msdos`
 (or `i8086-pc-win16...`) is enough, since clang finds the sysroot in
@@ -364,13 +365,31 @@ clang --config=sco.cfg -march=i486 -O2 hello.c -o hello     # i486 and later
   library does differently on SCO, are in
   `share/clang-dos/docs/sco-README.md`.
 
+## AIX
+
+```sh
+clang --config=aix.cfg -O2 hello.c -o hello               # PowerPC 601 and later
+clang --config=aix.cfg -mcpu=604 -O2 hello.c -o hello     # 604 and later
+```
+
+- The sysroot is `powerpc-ibm-aix/`, which clang's AIX driver finds next
+  to `bin/` by itself (`usr/include`, `usr/lib`), with picolibc and its
+  AIX layer and compiler-rt's builtins. Nothing in it comes from IBM.
+- `xcoff-ld` (lld's XCOFF linker) links static 32-bit XCOFF executables
+  that import their kernel calls from `/unix` by name, as AIX's own static
+  programs do. Leave `-mcpu=pwr3` to `pwr5` alone: clang turns on AltiVec
+  for them.
+- `share/clang-dos/aixrun.c` builds (with any `cc`, and `-lm`) a PowerPC
+  interpreter that runs them; programs are tested there. Details are in
+  `share/clang-dos/docs/aix-README.md`.
+
 ## Checking the package
 
 `smoke-test.sh` builds `examples/` for every target above and checks the
 results with `ne-check.py` and `check-imports.py`. With
 [emu2](https://github.com/dmsc/emu2), Wine and vamos (`pip install amitools
 machine68k==0.3.0`) on `PATH` (or `EMU2=`, `WINE=` and `VAMOS=`), and
-Hatari with `EMUTOS_DIR` set, and qemu-irix (with qemu-solaris and qemu-solarisx86) in `QEMU_IRIX_DIR`, and bsdrun and scorun in `BSDRUN` and `SCORUN`, it runs
+Hatari with `EMUTOS_DIR` set, and qemu-irix (with qemu-solaris and qemu-solarisx86) in `QEMU_IRIX_DIR`, and bsdrun, scorun and aixrun in `BSDRUN`, `SCORUN` and `AIXRUN`, it runs
 them too:
 
 ```sh
@@ -379,9 +398,9 @@ HOSTRUN=wine sh smoke-test.sh             # Windows package, from Linux with Win
 ```
 
 Every program is tested only in emu2, Wine, Amiga emulators, Hatari,
-qemu-irix, bsdrun and scorun; none has run on real DOS, Windows 1.x-3.x,
-Win32s, NT 3.x, 9x, 2000, XP, later Windows, Amiga, Atari, SGI, Sun,
-FreeBSD, NetBSD or SCO machines yet.
+qemu-irix, bsdrun, scorun and aixrun; none has run on real DOS, Windows
+1.x-3.x, Win32s, NT 3.x, 9x, 2000, XP, later Windows, Amiga, Atari, SGI,
+Sun, FreeBSD, NetBSD, SCO or AIX machines yet.
 
 ## Contents
 
@@ -405,11 +424,13 @@ i386-pc-solaris/   Solaris sysroot: picolibc and builtins for 32-bit x86 (i486)
 i386-unknown-freebsd/ FreeBSD sysroot: picolibc and builtins for 32-bit x86 (i486)
 i386-unknown-netbsd/  NetBSD sysroot: the same, for NetBSD
 i386-pc-sco/          SCO sysroot: picolibc and builtins for 32-bit x86 (i386)
+powerpc-ibm-aix/      AIX sysroot: picolibc and builtins for 32-bit PowerPC (601)
 share/clang-dos/   ne-check.py, check-imports.py, win16-imports.py, build-modern-sysroot.sh,
                    amiga-ndk.py (with lha.py, fd2stub.py), amiga-examples/,
                    hatari-run.sh, atari-examples/, build-qemu-irix.sh,
                    import-irix.sh, irix-examples/, solaris-examples/,
-                   bsdrun.c, bsd-examples/, scorun.c, sco-examples/, docs/
+                   bsdrun.c, bsd-examples/, scorun.c, sco-examples/,
+                   aixrun.c, aix-examples/, docs/
 examples/          hello.c, hello.cpp, except.cpp, threads.cpp, curses.c, smoke.odl
 BRANCHES.txt       the source branches and commits this was built from
 ```
