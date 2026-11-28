@@ -13,7 +13,8 @@
 #             libclang_rt.osx.a).
 #
 # Needs powerpc-apple-darwin8-ar, -ranlib, -libtool and -lipo on PATH
-# (scripts/build-cctools-ppc.sh). Apple's SDK is not copied into PREFIX.
+# (scripts/build-cctools-ppc.sh), and -ld for the link checks of
+# tests/macosx-link/check.sh. Apple's SDK is not copied into PREFIX.
 #
 # Copy PREFIX/lib/darwin/* into <clang resource dir>/lib/darwin. Build a
 # fat program with one clang++ per processor, then join them with lipo:
@@ -45,4 +46,8 @@ for lib in libc++.a libc++abi.a libunwind.a; do
     "$WORK/install-i386/lib/$lib" -output "$PREFIX/lib/$lib"
 done
 cp "$WORK"/builtins/libclang_rt.*.a "$PREFIX/lib/darwin/"
+# Link small C++ programs against the new libraries with ld64, so that the
+# build stops when ld64 does not accept the code in them.
+BIN=$BIN SDK=$SDK PREFIX=$PREFIX WORK=$WORK/link-check \
+  sh "$here/../tests/macosx-link/check.sh"
 echo "installed $PREFIX"
